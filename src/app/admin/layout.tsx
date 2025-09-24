@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function AdminLayout({
   children,
@@ -12,11 +12,18 @@ export default function AdminLayout({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem('user_session');
-    localStorage.removeItem('cmms_reports');
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    try {
+      // Hapus cookies melalui API
+      await fetch('/api/auth/logout', {
+        method: 'POST'
+      });
+      router.push('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   const adminMenuItems = [

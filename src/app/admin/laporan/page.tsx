@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils/date';
 
 interface Report {
   id: string;
@@ -12,17 +13,53 @@ interface Report {
 }
 
 export default function ReportPage() {
-  const [reports, setReports] = useState<Report[]>([
-    // Dummy data
-    {
-      id: '1',
-      title: 'Kerusakan AC Ruang 101',
-      description: 'AC tidak dingin dan mengeluarkan bunyi keras',
-      status: 'pending',
-      submittedBy: 'John Doe',
-      submittedAt: '2024-01-15T08:00:00',
-    },
-  ]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const response = await fetch('/api/tickets');
+        const data = await response.json();
+        
+        const formattedReports = data.map((ticket: any) => ({
+          id: ticket.id,
+          title: ticket.title,
+          description: ticket.description,
+          status: ticket.status.toLowerCase(),
+          submittedBy: ticket.reporter.name,
+          submittedAt: ticket.createdAt,
+        }));
+
+        setReports(formattedReports);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load reports');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+          <span className="block sm:inline">{error}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 text-black">
@@ -57,7 +94,7 @@ export default function ReportPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{report.submittedBy}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                  {new Date(report.submittedAt).toLocaleDateString()}
+                  {formatDate(report.submittedAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button

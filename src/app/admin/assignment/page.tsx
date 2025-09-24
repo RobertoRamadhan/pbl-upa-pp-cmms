@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Assignment {
   id: string;
@@ -12,17 +12,37 @@ interface Assignment {
 }
 
 export default function AssignmentPage() {
-  const [assignments, setAssignments] = useState<Assignment[]>([
-    // Dummy data
-    {
-      id: 'A1',
-      reportId: '1',
-      reportTitle: 'Kerusakan AC Ruang 101',
-      technician: 'Teknisi A',
-      assignedAt: '2024-01-15T10:00:00',
-      status: 'assigned',
-    },
-  ]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const response = await fetch('/api/assignments');
+        const data = await response.json();
+        
+        // Pastikan data adalah array
+        const assignments = Array.isArray(data) ? data : [];
+        
+        const formattedAssignments = assignments.map((assignment: any) => ({
+          id: assignment.id,
+          reportId: assignment.ticket.id,
+          reportTitle: assignment.ticket.title,
+          technician: assignment.technician.name,
+          assignedAt: assignment.createdAt,
+          status: assignment.status.toLowerCase(),
+        }));
+
+        setAssignments(formattedAssignments);
+      } catch (error) {
+        console.error('Error fetching assignments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignments();
+  }, []);
 
   const getStatusColor = (status: Assignment['status']) => {
     switch (status) {

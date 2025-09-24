@@ -1,140 +1,183 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
   ArcElement,
-  Title,
   Tooltip,
-  Legend,
-  Filler,
+  Legend
 } from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
   ArcElement,
-  Title,
   Tooltip,
-  Legend,
-  Filler
+  Legend
 );
 
+interface AssignmentData {
+  status: string;
+}
+
+interface PerformanceData {
+  onTime: number;
+  late: number;
+}
+
+interface UserSession {
+  id: string;
+  role?: string;
+}
+
 export default function TeknisiDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('tugas');
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
-    menunggu: 5,
-    dikerjakan: 3,
-    selesai: 12,
+    menunggu: 0,
+    dikerjakan: 0,
+    selesai: 0,
+  });
+  
+  const [performaData, setPerformaData] = useState({
+    labels: ['Tepat Waktu', 'Terlambat'],
+    datasets: [{
+      data: [0, 0],
+      backgroundColor: [
+        'rgb(34, 197, 94)',  // Hijau
+        'rgb(239, 68, 68)',  // Merah
+      ],
+      borderWidth: 0,
+    }],
   });
 
-  // Data untuk doughnut chart (Performa Teknisi)
-  const performaData = {
-    labels: ['Tepat Waktu', 'Terlambat'],
-    datasets: [
-      {
-        data: [85, 15],
-        backgroundColor: [
-          'rgb(34, 197, 94)',  // Hijau
-          'rgb(239, 68, 68)',  // Merah
-        ],
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  // Data untuk line chart (Waktu Penyelesaian)
-  const timelineData = {
-    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'],
-    datasets: [
-      {
-        fill: true,
-        label: 'Waktu (Jam)',
-        data: [4, 3, 5, 2, 4],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          font: {
-            size: 12,
-          },
+  const fetchStats = async (technicianId: string) => {
+    try {
+      const response = await fetch(`/api/assignments?technicianId=${technicianId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      },
-      x: {
-        ticks: {
-          font: {
-            size: 12,
-          },
-        },
-      },
-    },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error('Data is not an array');
+      }
+
+      setStats({
+        menunggu: data.filter((a: AssignmentData) => a.status === 'PENDING').length,
+        dikerjakan: data.filter((a: AssignmentData) => a.status === 'IN_PROGRESS').length,
+        selesai: data.filter((a: AssignmentData) => a.status === 'COMPLETED').length,
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      setStats({
+        menunggu: 0,
+        dikerjakan: 0,
+        selesai: 0,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const doughnutOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          font: {
-            size: 12,
-          },
+  const fetchPerformance = async (technicianId: string) => {
+    try {
+      const response = await fetch(`/api/assignments/performance?technicianId=${technicianId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      },
-    },
-    cutout: '70%',
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: PerformanceData = await response.json();
+      
+      setPerformaData(prev => ({
+        ...prev,
+        datasets: [{
+          ...prev.datasets[0],
+          data: [data.onTime, data.late]
+        }]
+      }));
+    } catch (error) {
+      console.error('Error fetching performance data:', error);
+    }
   };
 
-  // Dummy data tugas
-  const tasks = [
-    {
-      id: 1,
-      ruangan: 'Lab Komputer 1',
-      masalah: 'Printer tidak berfungsi',
-      status: 'menunggu',
-      prioritas: 'tinggi',
-      tanggal: '2025-09-18',
-    },
-    {
-      id: 2,
-      ruangan: 'Ruang Dosen',
-      masalah: 'AC tidak dingin',
-      status: 'dikerjakan',
-      prioritas: 'sedang',
-      tanggal: '2025-09-18',
-    },
-    {
-      id: 3,
-      ruangan: 'Lab Jaringan',
-      masalah: 'Router perlu konfigurasi ulang',
-      status: 'selesai',
-      prioritas: 'rendah',
-      tanggal: '2025-09-17',
-    },
-  ];
+  useEffect(() => {
+    const checkAuthAndFetchData = async () => {
+      console.log('Starting auth check...');
+      
+      // Don't run on server side
+      if (typeof window === 'undefined') {
+        console.log('Server side rendering, skipping auth check');
+        return;
+      }
+
+      // Get session from localStorage
+      const userSessionStr = localStorage.getItem('user_session');
+      console.log('Session string:', userSessionStr ? 'Found' : 'Not found');
+      
+      if (!userSessionStr) {
+        console.log('No session found, redirecting to login');
+        router.push('/login');
+        return;
+      }
+
+      try {
+        // Parse and validate session
+        const userSession = JSON.parse(userSessionStr) as UserSession;
+        console.log('Session parsed:', {
+          hasId: !!userSession?.id,
+          role: userSession?.role || 'none'
+        });
+
+        if (!userSession?.id || userSession.role !== 'teknisi') {
+          console.log('Invalid session (wrong role or no ID), clearing and redirecting');
+          localStorage.removeItem('user_session');
+          router.replace('/login');
+          return;
+        }
+
+        console.log('Valid technician session, fetching data...');
+        // Fetch data only if we have valid session
+        await Promise.all([
+          fetchStats(userSession.id),
+          fetchPerformance(userSession.id)
+        ]);
+        
+        console.log('Data fetch completed');
+      } catch (error) {
+        console.error('Session error:', error);
+        localStorage.removeItem('user_session');
+        window.location.replace('/login');
+      }
+    };
+
+    // Run immediately
+    checkAuthAndFetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -181,80 +224,22 @@ export default function TeknisiDashboard() {
       {/* Content Area */}
       <div className="p-4">
         {activeTab === 'tugas' ? (
-          /* Task List */
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <div key={task.id} className="bg-white rounded-lg shadow-sm p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-black">{task.ruangan}</h3>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      task.status === 'menunggu'
-                        ? 'bg-orange-100 text-orange-600'
-                        : task.status === 'dikerjakan'
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-green-100 text-green-600'
-                    }`}
-                  >
-                    {task.status}
-                  </span>
-                </div>
-                <p className="text-sm text-black mb-2">{task.masalah}</p>
-                <div className="flex justify-between items-center text-xs text-black">
-                  <span>{task.tanggal}</span>
-                  <span
-                    className={`font-medium ${
-                      task.prioritas === 'tinggi'
-                        ? 'text-red-500'
-                        : task.prioritas === 'sedang'
-                        ? 'text-yellow-500'
-                        : 'text-green-500'
-                    }`}
-                  >
-                    Prioritas {task.prioritas}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="space-y-4">
+            {/* Tugas content will be added here */}
           </div>
         ) : (
-          /* Performance Charts */
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="text-sm font-medium text-black mb-4">
                 Performa Penyelesaian
               </h3>
               <div className="w-48 h-48 mx-auto">
-                <Doughnut data={performaData} options={doughnutOptions} />
+                <Doughnut data={performaData} />
               </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <h3 className="text-sm font-medium text-black mb-4">
-                Waktu Penyelesaian Minggu Ini
-              </h3>
-              <Line data={timelineData} options={chartOptions} />
             </div>
           </div>
         )}
       </div>
-
-      {/* Floating Action Button for Quick Actions */}
-      <button className="fixed bottom-6 right-6 bg-blue-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-          />
-        </svg>
-      </button>
     </div>
   );
 }

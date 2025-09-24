@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   PieChart,
   Pie,
@@ -19,20 +19,80 @@ import {
 } from 'recharts';
 
 export default function AdminDashboard() {
-  // Data statistik
-  const [stats] = useState({
-    totalLaporan: 150,
-    menunggu: 30,
-    diproses: 45,
-    selesai: 75,
+  const [stats, setStats] = useState({
+    totalLaporan: 0,
+    menunggu: 0,
+    diproses: 0,
+    selesai: 0,
   });
 
-  // Data untuk pie chart (Status Laporan)
-  const pieData = [
-    { name: 'Menunggu', value: stats.menunggu, color: '#ff9f40' },
-    { name: 'Diproses', value: stats.diproses, color: '#36a2eb' },
-    { name: 'Selesai', value: stats.selesai, color: '#4bc0c0' }
-  ];
+  const [pieData, setPieData] = useState([
+    { name: 'Menunggu', value: 0, color: '#ff9f40' },
+    { name: 'Diproses', value: 0, color: '#36a2eb' },
+    { name: 'Selesai', value: 0, color: '#4bc0c0' }
+  ]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/tickets', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        let data;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          throw new Error("Response was not JSON");
+        }
+
+        // Pastikan data adalah array dan validasi struktur
+        if (!Array.isArray(data)) {
+          throw new Error('Data is not an array');
+        }
+
+        // Validasi struktur data
+        const isValidData = data.every((item) => 
+          typeof item === 'object' && 
+          item !== null &&
+          typeof item.status === 'string'
+        );
+
+        if (!isValidData) {
+          throw new Error('Invalid data structure received');
+        }
+
+        const menunggu = data.filter(t => t.status === 'PENDING').length;
+        const diproses = data.filter(t => t.status === 'IN_PROGRESS').length;
+        const selesai = data.filter(t => t.status === 'COMPLETED').length;
+        
+        setStats({
+          totalLaporan: data.length,
+          menunggu,
+          diproses,
+          selesai,
+        });
+
+        setPieData([
+          { name: 'Menunggu', value: menunggu, color: '#ff9f40' },
+          { name: 'Diproses', value: diproses, color: '#36a2eb' },
+          { name: 'Selesai', value: selesai, color: '#4bc0c0' }
+        ]);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Data untuk bar chart (Laporan per Bulan)
   const barData = [

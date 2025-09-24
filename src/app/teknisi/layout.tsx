@@ -13,10 +13,30 @@ export default function TeknisiLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  const handleLogout = () => {
-    localStorage.removeItem('user_session');
-    localStorage.removeItem('cmms_reports');
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    try {
+      // Panggil API logout
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+
+      // Hapus data dari localStorage
+      localStorage.removeItem('user_session');
+      localStorage.removeItem('cmms_reports');
+
+      // Redirect ke halaman login
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error during logout:', error);
+      alert('Gagal melakukan logout. Silakan coba lagi.');
+    }
   };
 
   const teknisiMenuItems = [
@@ -80,7 +100,7 @@ export default function TeknisiLayout({
                 {isDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                     <Link
-                      href="/teknisi/profile"
+                      href="/technician/profile"
                       className="block px-4 py-2 text-sm text-black hover:bg-gray-100 transition-colors"
                     >
                       👤 Profile

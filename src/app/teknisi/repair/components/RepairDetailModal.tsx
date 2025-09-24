@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { RepairRequest, RepairNote } from '../types';
+import { formatDate } from '@/lib/utils/date';
 
 interface RepairDetailModalProps {
   repair: RepairRequest;
@@ -74,7 +75,7 @@ export default function RepairDetailModal({
                 <p><span className="text-black">Kategori:</span> {repair.category}</p>
                 <p><span className="text-black">Prioritas:</span> {repair.priority}</p>
                 <p><span className="text-black">Status:</span> {repair.status}</p>
-                <p><span className="text-black">Tanggal Laporan:</span> {repair.submitDate.toLocaleString()}</p>
+                <p><span className="text-black">Tanggal Laporan:</span> {formatDate(repair.submitDate)}</p>
               </div>
             </div>
             <div>
