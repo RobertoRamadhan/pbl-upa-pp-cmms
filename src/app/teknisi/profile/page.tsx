@@ -40,19 +40,12 @@ export default function TeknisiProfile() {
           </div>
 
           {/* Stats Bar */}
-          <div className="grid grid-cols-3 gap-4 p-4 bg-blue-50">
+          <div className="grid grid-cols-1 gap-4 p-4 bg-blue-50">
             <div className="text-center">
               <p className="text-2xl font-bold text-blue-600">24</p>
               <p className="text-sm text-black">Tugas Selesai</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">98%</p>
-              <p className="text-sm text-black">Rating</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">45m</p>
-              <p className="text-sm text-black">Resp. Time</p>
-            </div>
+            
           </div>
 
           {/* Informasi Profile */}
