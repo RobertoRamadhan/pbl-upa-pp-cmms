@@ -1,286 +1,151 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { formatDate } from '@/lib/utils/date';
 
-interface UserProfile {
+interface Ticket {
   id: string;
-  username: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  department: string | null;
-  role: string;
-  joinDate: string;
+  category: string;
+  subject: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high';
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: string;
 }
 
-export default function StaffProfile() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    department: ''
-  });
-  const [error, setError] = useState('');
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchTickets = async () => {
       try {
-        // Get session data
-        const sessionStr = localStorage.getItem('user_session');
-        if (!sessionStr) {
-          router.push('/login');
-          return;
-        }
-
-        const session = JSON.parse(sessionStr);
-        
-        // Fetch profile data from API
-        const response = await fetch(`/api/staff/profile/${session.id}`, {
+        const response = await fetch('/api/tickets', {
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
+          cache: 'no-store'
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch profile');
+          throw new Error('Failed to fetch tickets');
         }
 
         const data = await response.json();
-        setProfile(data);
-        setEditForm({
-          name: data.name || '',
-          email: data.email || '',
-          phone: data.phone || '',
-          department: data.department || ''
-        });
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        setError('Failed to load profile data');
-      } finally {
-        setIsLoading(false);
+        setTickets(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load tickets');
+        setLoading(false);
       }
     };
 
-    fetchProfile();
-  }, [router]);
+    fetchTickets();
+  }, []);
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    if (profile) {
-      setEditForm({
-        name: profile.name || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
-        department: profile.department || ''
-      });
-    }
-    setIsEditing(false);
-  };
-
-  const handleSave = async () => {
-    try {
-      if (!profile) return;
-
-      const response = await fetch(`/api/staff/profile/${profile.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editForm),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      const updatedProfile = await response.json();
-      setProfile(updatedProfile);
-      setIsEditing(false);
-      
-      // Update session data
-      const sessionStr = localStorage.getItem('user_session');
-      if (sessionStr) {
-        const session = JSON.parse(sessionStr);
-        localStorage.setItem('user_session', JSON.stringify({
-          ...session,
-          name: updatedProfile.name,
-          email: updatedProfile.email,
-          department: updatedProfile.department
-        }));
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setError('Failed to update profile');
+  const getStatusColor = (status: Ticket['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  if (isLoading) {
+  const getPriorityColor = (priority: Ticket['priority']) => {
+    switch (priority) {
+      case 'high':
+        return 'text-red-600';
+      case 'medium':
+        return 'text-yellow-600';
+      case 'low':
+        return 'text-green-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
-        </div>
+      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center text-red-600">
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center text-gray-600">
-          <p>Profile not found</p>
+      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">
+          <span className="block sm:inline">{error}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-blue-600 p-4">
-          <h1 className="text-2xl font-bold text-white">Profil Staff</h1>
-        </div>
-        
-        <div className="p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 text-red-600 rounded-lg">
-              {error}
-            </div>
-          )}
+    <div className="min-h-screen bg-gray-100 p-8 text-black">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="p-6 border-b">
+            <h1 className="text-2xl font-bold">Tiket Saya</h1>
+          </div>
 
-          <div className="space-y-6">
-            {/* Profile Picture */}
-            <div className="flex justify-center">
-              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-4xl text-gray-500">{profile.name.charAt(0)}</span>
-              </div>
-            </div>
-
-            {/* Profile Information */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nama</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.name}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <p className="mt-1 text-gray-900">{profile.username}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                {isEditing ? (
-                  <input
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.email}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nomor Telepon</label>
-                {isEditing ? (
-                  <input
-                    type="tel"
-                    value={editForm.phone || ''}
-                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.phone || '-'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Departemen</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.department || ''}
-                    onChange={(e) => setEditForm({...editForm, department: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.department || '-'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
-                <p className="mt-1 text-gray-900">{profile.role}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Tanggal Bergabung</label>
-                <p className="mt-1 text-gray-900">
-                  {new Date(profile.joinDate).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 mt-6">
-              {isEditing ? (
-                <>
-                  <button
-                    onClick={handleCancel}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Simpan
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={handleEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Edit Profil
-                </button>
-              )}
-            </div>
+          {/* Ticket List */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Kategori</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Subjek</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Prioritas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Teknisi</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Terakhir Update</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {tickets.map((ticket) => (
+                  <tr key={ticket.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{ticket.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{ticket.category}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{ticket.subject}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                        {ticket.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`font-medium ${getPriorityColor(ticket.priority)}`}>
+                        {ticket.priority}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {ticket.assignedTo || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {formatDate(ticket.updatedAt)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900">
+                        Detail
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
