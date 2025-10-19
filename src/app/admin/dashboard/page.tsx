@@ -5,17 +5,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  AreaChart,
-  Area,
-  PieLabelRenderProps
 } from 'recharts';
 
 export default function AdminDashboard() {
@@ -27,125 +18,53 @@ export default function AdminDashboard() {
   });
 
   const [pieData, setPieData] = useState([
-    { name: 'Menunggu', value: 0, color: '#ff9f40' },
+    { name: 'Menunggu', value: 0, color: '#ffcc00' },
     { name: 'Diproses', value: 0, color: '#36a2eb' },
     { name: 'Selesai', value: 0, color: '#4bc0c0' }
   ]);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('/api/tickets', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        let data;
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-        } else {
-          throw new Error("Response was not JSON");
-        }
-
-        // Pastikan data adalah array dan validasi struktur
-        if (!Array.isArray(data)) {
-          throw new Error('Data is not an array');
-        }
-
-        // Validasi struktur data
-        const isValidData = data.every((item) => 
-          typeof item === 'object' && 
-          item !== null &&
-          typeof item.status === 'string'
-        );
-
-        if (!isValidData) {
-          throw new Error('Invalid data structure received');
-        }
-
-        const menunggu = data.filter(t => t.status === 'PENDING').length;
-        const diproses = data.filter(t => t.status === 'IN_PROGRESS').length;
-        const selesai = data.filter(t => t.status === 'COMPLETED').length;
-        
-        setStats({
-          totalLaporan: data.length,
-          menunggu,
-          diproses,
-          selesai,
-        });
-
-        setPieData([
-          { name: 'Menunggu', value: menunggu, color: '#ff9f40' },
-          { name: 'Diproses', value: diproses, color: '#36a2eb' },
-          { name: 'Selesai', value: selesai, color: '#4bc0c0' }
-        ]);
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    };
-
-    fetchStats();
+    // nanti bisa fetch data dari API /api/tickets
+    setStats({
+      totalLaporan: 0,
+      menunggu: 0,
+      diproses: 0,
+      selesai: 0,
+    });
   }, []);
 
-  // Data untuk bar chart (Laporan per Bulan)
-  const barData = [
-    { month: 'Jan', laporan: 65 },
-    { month: 'Feb', laporan: 59 },
-    { month: 'Mar', laporan: 80 },
-    { month: 'Apr', laporan: 81 },
-    { month: 'Mei', laporan: 56 },
-    { month: 'Jun', laporan: 55 }
-  ];
-
-  // Data untuk area chart (Trend Waktu Penyelesaian)
-  const areaData = [
-    { month: 'Jan', waktu: 5 },
-    { month: 'Feb', waktu: 4 },
-    { month: 'Mar', waktu: 3 },
-    { month: 'Apr', waktu: 4 },
-    { month: 'Mei', waktu: 2 },
-    { month: 'Jun', waktu: 3 }
-  ];
-
-  const COLORS = ['#ff9f40', '#36a2eb', '#4bc0c0'];
-
   return (
-    <div className="min-h-screen bg-gray-100 p-8 text-black">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-black mb-8">Dashboard Admin</h1>
+    <div className="min-h-screen bg-white text-black p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Judul */}
+        <h1 className="text-2xl font-bold text-green-700 mb-6">Dashboard Admin</h1>
 
-        {/* Statistik Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-black text-sm font-medium">Total Laporan</h3>
-            <p className="text-3xl font-bold text-black">{stats.totalLaporan}</p>
+        {/* Statistik Card */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+          <div className="bg-white border-2 border-green-600 rounded-xl shadow p-4 text-center">
+            <p className="text-sm font-semibold text-gray-600">Total Laporan</p>
+            <p className="text-3xl font-bold text-green-700">{stats.totalLaporan}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-black text-sm font-medium">Menunggu</h3>
-            <p className="text-3xl font-bold text-orange-500">{stats.menunggu}</p>
+          <div className="bg-yellow-100 border border-yellow-400 rounded-xl shadow p-4 text-center">
+            <p className="text-sm font-semibold text-gray-600">Pending</p>
+            <p className="text-3xl font-bold text-yellow-600">{stats.menunggu}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-black text-sm font-medium">Diproses</h3>
-            <p className="text-3xl font-bold text-blue-500">{stats.diproses}</p>
+          <div className="bg-blue-100 border border-blue-400 rounded-xl shadow p-4 text-center">
+            <p className="text-sm font-semibold text-gray-600">On Progress</p>
+            <p className="text-3xl font-bold text-blue-600">{stats.diproses}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-black text-sm font-medium">Selesai</h3>
-            <p className="text-3xl font-bold text-teal-500">{stats.selesai}</p>
+          <div className="bg-green-100 border border-green-400 rounded-xl shadow p-4 text-center">
+            <p className="text-sm font-semibold text-gray-600">Selesai</p>
+            <p className="text-3xl font-bold text-green-600">{stats.selesai}</p>
           </div>
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Pie Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-black mb-4">Status Laporan</h2>
+        {/* Grafik Statistik */}
+        <div className="bg-white border-2 border-green-600 rounded-xl shadow p-6 text-center mb-10">
+          <h2 className="text-xl font-semibold mb-4 text-green-700">Grafik Statistik</h2>
+          {stats.totalLaporan === 0 ? (
+            <p className="text-gray-500 italic">Belum ada laporan</p>
+          ) : (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -165,43 +84,31 @@ export default function AdminDashboard() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-          </div>
+          )}
+        </div>
 
-          {/* Bar Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-black mb-4">Laporan per Bulan</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="laporan" fill="#36a2eb" name="Jumlah Laporan" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Assign Teknisi */}
+        <div className="bg-white border-2 border-green-600 rounded-xl shadow p-6">
+          <h2 className="text-lg font-semibold text-green-700 mb-4">Assign Teknisi</h2>
 
-          {/* Area Chart */}
-          <div className="bg-white rounded-lg shadow p-6 md:col-span-2">
-            <h2 className="text-xl font-semibold text-black mb-4">Trend Waktu Penyelesaian</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={areaData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area 
-                  type="monotone" 
-                  dataKey="waktu" 
-                  stroke="#4bc0c0" 
-                  fill="rgba(75, 192, 192, 0.2)"
-                  name="Rata-rata Waktu Penyelesaian (Hari)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {stats.totalLaporan === 0 ? (
+            <div className="text-center text-gray-500 italic">
+              Belum ada laporan yang ditugaskan.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* contoh isi data laporan nanti */}
+              <div className="flex justify-between items-center border-b pb-2">
+                <div>
+                  <p className="font-semibold">#1 Ruang Server</p>
+                  <p className="text-gray-500 text-sm">AC Rusak</p>
+                </div>
+                <span className="bg-blue-200 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                  On Progress
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

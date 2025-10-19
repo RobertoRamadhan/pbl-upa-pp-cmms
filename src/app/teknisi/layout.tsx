@@ -100,7 +100,7 @@ export default function TeknisiLayout({
                 {isDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                     <Link
-                      href="/technician/profile"
+                      href="/teknisi/profile"
                       className="block px-4 py-2 text-sm text-black hover:bg-gray-100 transition-colors"
                     >
                       👤 Profile
