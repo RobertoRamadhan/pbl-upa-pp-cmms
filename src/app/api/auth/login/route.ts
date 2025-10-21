@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { compare } from 'bcrypt'
+import { user_role } from '@prisma/client'
 
 export async function POST(request: Request) {
   try {
@@ -33,13 +34,14 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
+    
     // Map frontend role ke database role
-    const roleMap: { [key: string]: 'ADMIN' | 'STAFF' | 'TECHNICIAN' } = {
-      'admin': 'ADMIN',
-      'staff': 'STAFF',
-      'teknisi': 'TECHNICIAN'
-    }
+    const roleMap: Record<string, user_role> = {
+      'admin': 'ADMIN' as user_role,
+      'staff': 'STAFF' as user_role,
+      'teknisi': 'TECHNICIAN' as user_role,
+      'supervisor': 'SUPERVISOR' as user_role
+    };
 
     console.log('Received role from frontend:', role);
 
@@ -66,9 +68,12 @@ export async function POST(request: Request) {
       role: dbRole
     })
 
-    // Cari user dengan username, tanpa role dulu untuk debug
+    // Cari user dengan username dan role
     const userByUsername = await prisma.user.findFirst({
-      where: { username },
+      where: { 
+        username,
+        role: dbRole
+      },
       select: {
         id: true,
         password: true,
@@ -134,7 +139,8 @@ export async function POST(request: Request) {
     const frontendRoleMap: { [key: string]: string } = {
       'ADMIN': 'admin',
       'STAFF': 'staff',
-      'TECHNICIAN': 'teknisi'
+      'TECHNICIAN': 'teknisi',
+      'SUPERVISOR': 'supervisor'
     };
 
     const frontendRole = frontendRoleMap[user.role];

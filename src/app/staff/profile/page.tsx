@@ -1,286 +1,109 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-interface UserProfile {
-  id: string;
-  username: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  department: string | null;
-  role: string;
-  joinDate: string;
-}
-
-export default function StaffProfile() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function StaffProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    department: ''
+  const [profile, setProfile] = useState({
+    nama: 'Sarah Johnson',
+    email: 'staff@upa-pp.ac.id',
+    noHP: '081234567891',
+    jabatan: 'Staff Administrasi',
+    bergabung: '2023-02-01',
   });
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        // Get session data
-        const sessionStr = localStorage.getItem('user_session');
-        if (!sessionStr) {
-          router.push('/login');
-          return;
-        }
-
-        const session = JSON.parse(sessionStr);
-        
-        // Fetch profile data from API
-        const response = await fetch(`/api/staff/profile/${session.id}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile');
-        }
-
-        const data = await response.json();
-        setProfile(data);
-        setEditForm({
-          name: data.name || '',
-          email: data.email || '',
-          phone: data.phone || '',
-          department: data.department || ''
-        });
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        setError('Failed to load profile data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [router]);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    if (profile) {
-      setEditForm({
-        name: profile.name || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
-        department: profile.department || ''
-      });
-    }
+  const handleSave = () => {
     setIsEditing(false);
   };
 
-  const handleSave = async () => {
-    try {
-      if (!profile) return;
-
-      const response = await fetch(`/api/staff/profile/${profile.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editForm),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-
-      const updatedProfile = await response.json();
-      setProfile(updatedProfile);
-      setIsEditing(false);
-      
-      // Update session data
-      const sessionStr = localStorage.getItem('user_session');
-      if (sessionStr) {
-        const session = JSON.parse(sessionStr);
-        localStorage.setItem('user_session', JSON.stringify({
-          ...session,
-          name: updatedProfile.name,
-          email: updatedProfile.email,
-          department: updatedProfile.department
-        }));
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setError('Failed to update profile');
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center text-red-600">
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center text-gray-600">
-          <p>Profile not found</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-blue-600 p-4">
-          <h1 className="text-2xl font-bold text-white">Profil Staff</h1>
+    <div className='min-h-screen bg-gray-50 p-4'>
+      <div className='max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden'>
+        <div className='bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8 flex flex-col items-center'>
+          <div className='w-32 h-32 bg-white rounded-full mb-4 flex items-center justify-center'>
+            <svg className='w-20 h-20 text-blue-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' />
+            </svg>
+          </div>
+          <h1 className='text-2xl font-bold'>{profile.nama}</h1>
+          <p className='text-blue-100'>{profile.jabatan}</p>
         </div>
-        
-        <div className="p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 text-red-600 rounded-lg">
-              {error}
-            </div>
-          )}
 
-          <div className="space-y-6">
-            {/* Profile Picture */}
-            <div className="flex justify-center">
-              <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-4xl text-gray-500">{profile.name.charAt(0)}</span>
-              </div>
-            </div>
-
-            {/* Profile Information */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nama</label>
-                {isEditing ? (
+        <div className='p-6'>
+          <div className='mb-8'>
+            <h2 className='text-xl font-semibold mb-4'>Informasi Personal</h2>
+            {isEditing ? (
+              <div className='space-y-4'>
+                <div>
+                  <label className='block text-sm mb-1'>Nama Lengkap</label>
                   <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    type='text'
+                    value={profile.nama}
+                    onChange={(e) => setProfile({...profile, nama: e.target.value})}
+                    className='w-full p-2 border rounded'
                   />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.name}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <p className="mt-1 text-gray-900">{profile.username}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                {isEditing ? (
+                </div>
+                <div>
+                  <label className='block text-sm mb-1'>Email</label>
                   <input
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    type='email'
+                    value={profile.email}
+                    onChange={(e) => setProfile({...profile, email: e.target.value})}
+                    className='w-full p-2 border rounded'
                   />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.email}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nomor Telepon</label>
-                {isEditing ? (
+                </div>
+                <div>
+                  <label className='block text-sm mb-1'>Nomor HP</label>
                   <input
-                    type="tel"
-                    value={editForm.phone || ''}
-                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    type='tel'
+                    value={profile.noHP}
+                    onChange={(e) => setProfile({...profile, noHP: e.target.value})}
+                    className='w-full p-2 border rounded'
                   />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.phone || '-'}</p>
-                )}
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Departemen</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.department || ''}
-                    onChange={(e) => setEditForm({...editForm, department: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="mt-1 text-gray-900">{profile.department || '-'}</p>
-                )}
+            ) : (
+              <div className='space-y-4'>
+                <div className='flex justify-between'>
+                  <span>Email:</span>
+                  <span>{profile.email}</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span>Nomor HP:</span>
+                  <span>{profile.noHP}</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span>Bergabung Sejak:</span>
+                  <span>{profile.bergabung}</span>
+                </div>
               </div>
+            )}
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
-                <p className="mt-1 text-gray-900">{profile.role}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Tanggal Bergabung</label>
-                <p className="mt-1 text-gray-900">
-                  {new Date(profile.joinDate).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 mt-6">
-              {isEditing ? (
-                <>
-                  <button
-                    onClick={handleCancel}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Simpan
-                  </button>
-                </>
-              ) : (
+          <div className='flex justify-end'>
+            {isEditing ? (
+              <>
                 <button
-                  onClick={handleEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  onClick={() => setIsEditing(false)}
+                  className='mr-4 px-4 py-2 text-gray-600 hover:text-gray-800'
                 >
-                  Edit Profil
+                  Batal
                 </button>
-              )}
-            </div>
+                <button
+                  onClick={handleSave}
+                  className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
+                >
+                  Simpan
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsEditing(true)}
+                className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
+              >
+                Edit Profil
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -55,7 +55,7 @@ export default function Home() {
         />
         
         {/* Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-blue-900/40 to-purple-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-blue-900/40 to-white-900/60" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
         
         {/* Animated Particles - Only render on client */}
@@ -84,11 +84,6 @@ export default function Home() {
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               UPA Perbaikan & Pemeliharaan
             </span>
-          </div>
-          <div className="hidden md:flex space-x-6 text-sm text-gray-300">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#about" className="hover:text-white transition-colors">About</a>
-            <a href="#contact" className="hover:text-white transition-colors">Contact</a>
           </div>
         </div>
       </nav>
