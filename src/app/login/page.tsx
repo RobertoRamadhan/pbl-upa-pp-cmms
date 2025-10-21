@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
-type RoleType = 'staff' | 'admin' | 'teknisi';
+type RoleType = 'staff' | 'admin' | 'teknisi' | 'supervisor';
 
 interface Role {
   id: RoleType;
@@ -45,6 +45,13 @@ export default function LoginPage() {
       description: 'Administrator'
     },
     {
+      id: 'supervisor',
+      name: 'Supervisor',
+      icon: '👨‍💼',
+      color: 'bg-purple-500 hover:bg-purple-600',
+      description: 'kepala uppa'
+    },
+    {
       id: 'teknisi',
       name: 'Teknisi',
       icon: '🔧',
@@ -77,7 +84,7 @@ export default function LoginPage() {
         }
 
         const role = session.role as RoleType;
-        const validRoles: RoleType[] = ['admin', 'staff', 'teknisi'];
+        const validRoles: RoleType[] = ['admin', 'staff', 'teknisi', 'supervisor'];
         
         if (!validRoles.includes(role)) {
           console.log('Invalid role in session:', role);
@@ -89,7 +96,8 @@ export default function LoginPage() {
         const rolePathMap: Record<RoleType, string> = {
           'admin': 'admin',
           'staff': 'staff',
-          'teknisi': 'teknisi'
+          'teknisi': 'teknisi',
+          'supervisor': 'supervisor'
         };
 
         const dashboardPath = `/${rolePathMap[role]}/dashboard`;

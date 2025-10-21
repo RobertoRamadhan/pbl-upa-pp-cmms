@@ -6,42 +6,68 @@ interface Assignment {
   id: string;
   reportId: string;
   reportTitle: string;
-  technician: string;
-  assignedAt: string;
-  status: "assigned" | "inProgress" | "waitingApproval" | "completed";
+  technician?: string;
+  assignedAt?: string;
+  status: "pending" | "assigned" | "inProgress" | "waitingApproval" | "completed";
 }
 
 export default function AssignmentPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [unassignedTickets, setUnassignedTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    try {
+      // Fetch assignments
+      const assignmentsResponse = await fetch("/api/assignments");
+      const assignmentsData = await assignmentsResponse.json();
+      
+      // Fetch unassigned tickets
+      const ticketsResponse = await fetch("/api/tickets?status=PENDING");
+      const ticketsData = await ticketsResponse.json();
+
+      const formattedAssignments = (assignmentsData || []).map((assignment: any) => ({
+        id: assignment.id,
+        reportId: assignment.ticket.id,
+        reportTitle: assignment.ticket.subject,
+        technician: assignment.user_assignment_technicianIdTouser?.name,
+        assignedAt: assignment.createdAt,
+        status: assignment.status.toLowerCase(),
+      }));
+
+      const unassignedTickets = (ticketsData || []).map((ticket: any) => ({
+        id: ticket.id,
+        reportId: ticket.id,
+        reportTitle: ticket.subject,
+        status: 'pending',
+        priority: ticket.priority,
+        createdAt: ticket.createdAt
+      }));
+
+      setAssignments(formattedAssignments);
+      setUnassignedTickets(unassignedTickets);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAssignments = async () => {
-      try {
-        const response = await fetch("/api/assignments");
-        const data = await response.json();
-
-        const assignments = Array.isArray(data) ? data : [];
-
-        const formattedAssignments = assignments.map((assignment: any) => ({
-          id: assignment.id,
-          reportId: assignment.ticket.id,
-          reportTitle: assignment.ticket.title,
-          technician: assignment.technician.name,
-          assignedAt: assignment.createdAt,
-          status: assignment.status.toLowerCase(),
-        }));
-
-        setAssignments(formattedAssignments);
-      } catch (error) {
-        console.error("Error fetching assignments:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAssignments();
+    fetchData();
   }, []);
+
+  const handleAssign = async (ticketId: string) => {
+    try {
+      // Show assignment modal or form here
+      alert('Implement assignment modal');
+      // After successful assignment, refresh the data
+      await fetchData();
+    } catch (error) {
+      console.error('Error assigning ticket:', error);
+      alert('Failed to assign ticket');
+    }
+  };
 
   const getStatusColor = (status: Assignment["status"]) => {
     switch (status) {
@@ -60,44 +86,74 @@ export default function AssignmentPage() {
 
   return (
     <div className="p-4 sm:p-6 text-black">
-      <h1 className="text-2xl font-semibold mb-6">Daftar Penugasan</h1>
+      <h1 className="text-2xl font-semibold mb-6">Manajemen Penugasan</h1>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {/* Wrapper untuk scroll horizontal di layar kecil */}
+      {/* Unassigned Tickets Section */}
+      <div className="bg-yellow-50 p-4 mb-6 rounded-lg">
+        <h2 className="text-lg font-semibold mb-4">Tiket Belum Ditugaskan</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+          <table className="min-w-full">
             <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="px-4 sm:px-6 py-3 text-left font-medium text-black uppercase tracking-wider">
-                  ID Tugas
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left font-medium text-black uppercase tracking-wider">
-                  ID Laporan
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left font-medium text-black uppercase tracking-wider">
-                  Judul Laporan
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left font-medium text-black uppercase tracking-wider">
-                  Teknisi
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left font-medium text-black uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left font-medium text-black uppercase tracking-wider">
-                  Tanggal Assign
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left font-medium text-black uppercase tracking-wider">
-                  Aksi
-                </th>
+              <tr className="bg-yellow-100">
+                <th className="px-4 py-2 text-left">ID Tiket</th>
+                <th className="px-4 py-2 text-left">Subjek</th>
+                <th className="px-4 py-2 text-left">Prioritas</th>
+                <th className="px-4 py-2 text-left">Tanggal Dibuat</th>
+                <th className="px-4 py-2 text-left">Aksi</th>
               </tr>
             </thead>
+            <tbody>
+              {unassignedTickets.map((ticket) => (
+                <tr key={ticket.id} className="hover:bg-yellow-100">
+                  <td className="px-4 py-2">{ticket.id}</td>
+                  <td className="px-4 py-2">{ticket.reportTitle}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 rounded-full text-sm ${
+                      ticket.priority === 'HIGH' 
+                        ? 'bg-red-100 text-red-800'
+                        : ticket.priority === 'MEDIUM'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {ticket.priority}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    {new Date(ticket.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-2">
+                    <button
+                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                      onClick={() => handleAssign(ticket.id)}
+                    >
+                      Tugaskan
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
+      {/* Assigned Tickets Section */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <h2 className="text-lg font-semibold p-4">Daftar Penugasan Aktif</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="px-4 py-2">ID Tugas</th>
+                <th className="px-4 py-2">Teknisi</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Tanggal Assign</th>
+                <th className="px-4 py-2">Aksi</th>
+              </tr>
+            </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="text-center py-6 text-gray-500 italic"
+                  <td colSpan={5} className="text-center py-6 text-gray-500 italic"
                   >
                     Memuat data...
                   </td>
@@ -139,7 +195,7 @@ export default function AssignmentPage() {
                       </span>
                     </td>
                     <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      {new Date(assignment.assignedAt).toLocaleDateString()}
+                      {assignment.assignedAt ? new Date(assignment.assignedAt).toLocaleDateString() : '-'}
                     </td>
                     <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
                       <div className="flex space-x-3">

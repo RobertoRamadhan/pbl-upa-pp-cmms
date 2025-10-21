@@ -7,87 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model assignment {
-  id                                 String            @id
-  ticketId                           String            @unique(map: "Assignment_ticketId_key")
-  technicianId                       String
-  assignedById                       String
-  status                             assignment_status @default(PENDING)
-  notes                              String?           @db.Text
-  startTime                          DateTime?
-  endTime                            DateTime?
-  assignedAt                         DateTime          @default(now())
-  updatedAt                          DateTime
-  user_assignment_assignedByIdTouser user              @relation("assignment_assignedByIdTouser", fields: [assignedById], references: [id], map: "Assignment_assignedById_fkey")
-  user_assignment_technicianIdTouser user              @relation("assignment_technicianIdTouser", fields: [technicianId], references: [id], map: "Assignment_technicianId_fkey")
-  ticket                             ticket            @relation(fields: [ticketId], references: [id], map: "Assignment_ticketId_fkey")
-  material                           material[]
-  repairlog                          repairlog[]
-
-  @@index([assignedById], map: "Assignment_assignedById_fkey")
-  @@index([technicianId], map: "Assignment_technicianId_fkey")
-}
-
-model material {
-  id           String     @id
-  name         String
-  quantity     Int
-  unit         String
-  assignmentId String
-  assignment   assignment @relation(fields: [assignmentId], references: [id], map: "Material_assignmentId_fkey")
-
-  @@index([assignmentId], map: "Material_assignmentId_fkey")
-}
-
-model repairlog {
-  id           String           @id
-  assignmentId String
-  technicianId String
-  description  String           @db.Text
-  action       String
-  status       repairlog_status @default(ONGOING)
-  timeSpent    Int
-  attachments  String?
-  createdAt    DateTime         @default(now())
-  assignment   assignment       @relation(fields: [assignmentId], references: [id], map: "RepairLog_assignmentId_fkey")
-  user         user             @relation(fields: [technicianId], references: [id], map: "RepairLog_technicianId_fkey")
-
-  @@index([assignmentId], map: "RepairLog_assignmentId_fkey")
-  @@index([technicianId], map: "RepairLog_technicianId_fkey")
-}
-
-model technicianprofile {
-  id         String @id
-  userId     String @unique(map: "TechnicianProfile_userId_key")
-  expertise  String
-  area       String
-  shift      String
-  rating     Float  @default(0)
-  totalTasks Int    @default(0)
-  user       user   @relation(fields: [userId], references: [id], map: "TechnicianProfile_userId_fkey")
-}
-
-model ticket {
-  id           String          @id
-  ticketNumber String          @unique(map: "Ticket_ticketNumber_key")
-  category     String
-  subject      String
-  description  String          @db.Text
-  location     String
-  priority     ticket_priority @default(MEDIUM)
-  status       ticket_status   @default(PENDING)
-  reporterId   String
-  attachments  String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime
-  completedAt  DateTime?
-  assignment   assignment?
-  user         user            @relation(fields: [reporterId], references: [id], map: "Ticket_reporterId_fkey")
-
-  @@index([reporterId], map: "Ticket_reporterId_fkey")
-}
-
-model user {
+model User {
   id                                       String             @id
   username                                 String             @unique(map: "User_username_key")
   password                                 String
@@ -100,17 +20,158 @@ model user {
   isActive                                 Boolean            @default(true)
   createdAt                                DateTime           @default(now())
   updatedAt                                DateTime
-  assignment_assignment_assignedByIdTouser assignment[]       @relation("assignment_assignedByIdTouser")
-  assignment_assignment_technicianIdTouser assignment[]       @relation("assignment_technicianIdTouser")
-  repairlog                                repairlog[]
-  technicianprofile                        technicianprofile?
-  ticket                                   ticket[]
+  assignment_assignment_assignedByIdTouser Assignment[]       @relation("assignment_assignedByIdTouser")
+  assignment_assignment_technicianIdTouser Assignment[]       @relation("assignment_technicianIdTouser")
+  repairLogs                               RepairLog[]
+  technicianProfile                        TechnicianProfile?
+  tickets                                  Ticket[]
+  notifications                            Notification[]
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  message   String           @db.Text
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model MaintenanceHistory {
+  id          String            @id @default(uuid())
+  assetId     String
+  ticketId    String
+  type        MaintenanceType
+  description String            @db.Text
+  cost        Decimal?          @db.Decimal(10,2)
+  performedAt DateTime
+  createdAt   DateTime          @default(now())
+  asset       Asset             @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  ticket      Ticket            @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([ticketId])
+}
+
+model Assignment {
+  id                                 String            @id
+  ticketId                           String            @unique(map: "Assignment_ticketId_key")
+  technicianId                       String
+  assignedById                       String
+  status                             assignment_status @default(PENDING)
+  notes                              String?           @db.Text
+  startTime                          DateTime?
+  endTime                            DateTime?
+  assignedAt                         DateTime          @default(now())
+  updatedAt                          DateTime
+  user_assignment_assignedByIdTouser User              @relation("assignment_assignedByIdTouser", fields: [assignedById], references: [id], map: "Assignment_assignedById_fkey")
+  user_assignment_technicianIdTouser User              @relation("assignment_technicianIdTouser", fields: [technicianId], references: [id], map: "Assignment_technicianId_fkey")
+  ticket                             Ticket            @relation(fields: [ticketId], references: [id], map: "Assignment_ticketId_fkey")
+  materials                          Material[]
+  repairLogs                         RepairLog[]
+
+  @@index([assignedById], map: "Assignment_assignedById_fkey")
+  @@index([technicianId], map: "Assignment_technicianId_fkey")
+}
+
+model Asset {
+  id                String              @id @default(uuid())
+  code             String              @unique
+  name             String
+  category         String
+  location         String
+  status           AssetStatus         @default(ACTIVE)
+  purchaseDate     DateTime?
+  lastMaintenance  DateTime?
+  nextMaintenance  DateTime?
+  qrCode          String?             @db.Text
+  specifications   Json?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  maintenanceHistory MaintenanceHistory[]
+}
+
+model Material {
+  id           String     @id
+  name         String
+  quantity     Int
+  unit         String
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], map: "Material_assignmentId_fkey")
+
+  @@index([assignmentId], map: "Material_assignmentId_fkey")
+}
+
+model RepairLog {
+  id           String           @id
+  assignmentId String
+  technicianId String
+  description  String           @db.Text
+  action       String
+  status       repairlog_status @default(ONGOING)
+  timeSpent    Int
+  attachments  String?
+  createdAt    DateTime         @default(now())
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], map: "RepairLog_assignmentId_fkey")
+  user         User             @relation(fields: [technicianId], references: [id], map: "RepairLog_technicianId_fkey")
+
+  @@index([assignmentId], map: "RepairLog_assignmentId_fkey")
+  @@index([technicianId], map: "RepairLog_technicianId_fkey")
+}
+
+model TechnicianProfile {
+  id         String @id
+  userId     String @unique(map: "TechnicianProfile_userId_key")
+  expertise  String
+  area       String
+  shift      String
+  rating     Float  @default(0)
+  totalTasks Int    @default(0)
+  user       User   @relation(fields: [userId], references: [id], map: "TechnicianProfile_userId_fkey")
+}
+
+model Ticket {
+  id                String              @id
+  ticketNumber      String              @unique(map: "Ticket_ticketNumber_key")
+  category          String
+  subject           String
+  description       String              @db.Text
+  location          String
+  priority          ticket_priority     @default(MEDIUM)
+  status            ticket_status       @default(PENDING)
+  reporterId        String
+  attachments       String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  completedAt       DateTime?
+  assignment        Assignment?
+  user              User                @relation(fields: [reporterId], references: [id], map: "Ticket_reporterId_fkey")
+  maintenanceHistory MaintenanceHistory[]
+
+  @@index([reporterId], map: "Ticket_reporterId_fkey")
 }
 
 enum user_role {
   ADMIN
   STAFF
   TECHNICIAN
+  SUPERVISOR
+}
+
+enum NotificationType {
+  TICKET
+  ASSIGNMENT
+  REPAIR
+  SYSTEM
+}
+
+enum AssetStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
 }
 
 enum assignment_status {
@@ -132,6 +193,11 @@ enum ticket_priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
 }
 
 enum ticket_status {

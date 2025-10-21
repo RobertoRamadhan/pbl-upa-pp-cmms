@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 
-export default function StaffProfilePage() {
+export default function SupervisorProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
-    nama: 'Sarah Johnson',
-    email: 'staff@upa-pp.ac.id',
-    noHP: '081234567891',
-    jabatan: 'Staff Administrasi',
-    bergabung: '2023-02-01',
+    nama: 'John Doe',
+    email: 'supervisor@upa-pp.ac.id',
+    noHP: '081234567890',
+    jabatan: 'Supervisor',
+    bergabung: '2023-01-01',
   });
 
   const handleSave = () => {

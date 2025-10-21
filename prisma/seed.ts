@@ -14,7 +14,7 @@ async function main() {
     // Clear existing data
     console.log('Clearing existing data...');
     await prisma.ticket.deleteMany();
-    await prisma.technicianprofile.deleteMany();
+    await prisma.technicianProfile.deleteMany();
     await prisma.user.deleteMany();
     console.log('Existing data cleared');
     // Create admin user
@@ -49,7 +49,7 @@ async function main() {
     });
 
     // Create technician profile
-    const techProfile = await prisma.technicianprofile.create({
+    const techProfile = await prisma.technicianProfile.create({
       data: {
         id: 'techprofile-1',
         userId: technician.id,
@@ -75,6 +75,22 @@ async function main() {
       },
     });
     console.log('Staff created:', staff);
+
+    // Create supervisor user
+    const supervisorPassword = await hash('supervisor123', 10);
+    const supervisor = await prisma.user.create({
+      data: {
+        id: 'supervisor-1',
+        username: 'supervisor',
+        password: supervisorPassword,
+        role: 'SUPERVISOR',
+        name: 'Kepala UPPA',
+        email: 'supervisor@example.com',
+        department: 'UPPA',
+        updatedAt: new Date(),
+      },
+    });
+    console.log('Supervisor created:', supervisor);
 
     // Create sample ticket
     const ticket = await prisma.ticket.create({
