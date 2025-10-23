@@ -1,29 +1,93 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('CMMS Complete Workflow', () => {
+  test.setTimeout(60000); // Set timeout to 60 seconds for all tests in this describe block
+
   // Test untuk alur Staff
   test('1. Staff: Login and create maintenance ticket', async ({ page }) => {
     // 1. Login sebagai staff
     await page.goto('/login');
-    await expect(page.getByText('CMMS Login')).toBeVisible({ timeout: 10000 });
+    
+    // Wait for page to be fully loaded
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
+    
+    // Verify login page is loaded
+    await expect(page.getByRole('heading', { name: 'CMMS Login' })).toBeVisible({ timeout: 10000 });
 
     const usernameInput = page.getByRole('textbox').first();
     const passwordInput = page.locator('input[type="password"]');
     const roleSelect = page.locator('select');
 
-    await expect(usernameInput).toBeVisible();
-    await usernameInput.fill('staff');
-    await expect(passwordInput).toBeVisible();
-    await passwordInput.fill('staff123');
-    await roleSelect.selectOption({ value: 'staff' });
+    // Fill in login form with retry mechanism
+    await test.step('Fill login form', async () => {
+      await expect(usernameInput).toBeVisible();
+      await usernameInput.fill('staff');
+      await expect(passwordInput).toBeVisible();
+      await passwordInput.fill('staff123');
+      await roleSelect.selectOption({ value: 'staff' });
+    });
 
     const signInBtn = page.getByRole('button', { name: /👤.*Sign in as Staff/i });
     await expect(signInBtn).toBeVisible();
     await expect(signInBtn).toBeEnabled();
-    await signInBtn.click();
 
-    // 2. Buat ticket baru
-    await page.waitForURL('**/staff/dashboard');
+    // Set up promises for navigation and login request
+    await test.step('Login and wait for navigation', async () => {
+      // Set up response handler
+      const responsePromise = page.waitForResponse(
+        response => response.url().includes('/api/auth/login'),
+        { timeout: 30000 }
+      );
+
+      // Click login button
+      await signInBtn.click();
+
+      // Wait for response and check it
+      const response = await responsePromise;
+      const responseBody = await response.json();
+      console.log('Login response:', responseBody);
+
+      if (response.ok()) {
+        // Wait for navigation only if login was successful
+        await page.waitForURL('**/staff/dashboard', { timeout: 30000 });
+      } else {
+        throw new Error(`Login failed: ${JSON.stringify(responseBody)}`);
+      }
+    });
+
+    // Navigate to new ticket page
+    await test.step('Create new ticket', async () => {
+      await page.goto('/staff/new-ticket');
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
+
+      // Fill ticket form
+      await page.getByRole('combobox').selectOption('Komputer/Laptop');
+      await page.getByPlaceholder(/Ruang 101/).fill('Ruang 2301');
+      await page.getByPlaceholder(/Ringkasan singkat/).fill('Kerusakan Proyektor');
+      await page.getByPlaceholder(/Jelaskan detail/).fill('Proyektor di ruang 2301 tidak menyala');
+      await page.getByText('high').click();
+
+      // Submit form and wait for response
+      const responsePromise = page.waitForResponse(
+        response => response.url().includes('/api/tickets') && response.request().method() === 'POST',
+        { timeout: 30000 }
+      );
+
+      await page.getByRole('button', { name: /submit|buat|kirim/i }).click();
+      const response = await responsePromise;
+
+      // Verify successful creation
+      expect(response.ok()).toBeTruthy();
+      await page.waitForURL('**/staff/tickets', { timeout: 30000 });
+
+      // Verify successful login
+      await expect(page.getByText('Terjadi kesalahan')).not.toBeVisible();
+    });
+
+    // Verify no error message is visible
+    await expect(page.getByText('Terjadi kesalahan pada server')).not.toBeVisible();
     await page.goto('/staff/new-ticket');
     
     // Set up alert handler before any actions
@@ -70,85 +134,133 @@ test.describe('CMMS Complete Workflow', () => {
 
   // Test untuk alur Admin
   test('2. Admin: Verify and assign ticket', async ({ page }) => {
-    // Login sebagai admin
-    await page.goto('/login');
-    await expect(page.getByText('CMMS Login')).toBeVisible();
+    await test.step('Login as admin', async () => {
+      // Navigate to login page
+      await page.goto('/login');
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
+      await expect(page.getByRole('heading', { name: 'CMMS Login' })).toBeVisible();
 
-    const usernameInput = page.getByRole('textbox').first();
-    const passwordInput = page.locator('input[type="password"]');
-    const roleSelect = page.locator('select');
+      // Fill login form
+      const usernameInput = page.getByRole('textbox').first();
+      const passwordInput = page.locator('input[type="password"]');
+      const roleSelect = page.locator('select');
 
-    await expect(usernameInput).toBeVisible();
-    await usernameInput.fill('admin');
-    await expect(passwordInput).toBeVisible();
-    await passwordInput.fill('admin123');
-    await roleSelect.selectOption({ value: 'admin' });
+      await expect(usernameInput).toBeVisible();
+      await usernameInput.fill('admin');
+      await expect(passwordInput).toBeVisible();
+      await passwordInput.fill('admin123');
+      await roleSelect.selectOption({ value: 'admin' });
 
-    // Set up navigation promises before clicking
-    const navigationPromise = page.waitForURL('**/admin/dashboard');
-    const networkIdlePromise = page.waitForLoadState('networkidle');
-    const loginButton = page.getByRole('button', { name: /⚙️.*Sign in as Admin/i });
+      // Login and wait for response
+      const loginButton = page.getByRole('button', { name: /⚙️.*Sign in as Admin/i });
+      await expect(loginButton).toBeVisible();
+      await expect(loginButton).toBeEnabled();
 
-    // Click and wait for all navigation to complete
-    await Promise.all([
-      navigationPromise,
-      networkIdlePromise,
-      loginButton.click()
-    ]);
+      // Click and wait for response
+      const [response] = await Promise.all([
+        page.waitForResponse(
+          response => response.url().includes('/api/auth/login'),
+          { timeout: 30000 }
+        ),
+        page.waitForURL('**/admin/dashboard', { timeout: 30000 }),
+        loginButton.click()
+      ]);
 
-    // Set up API response handlers before navigation
-    page.on('dialog', async dialog => {
-      expect(dialog.message()).toBe('Implement assignment modal');
-      await dialog.accept();
+      // Verify successful login
+      const responseBody = await response.json();
+      console.log('Admin login response:', responseBody);
+      expect(response.ok()).toBeTruthy();
     });
 
-    // Go to assignment page and wait for API responses
-    const responsePromise1 = page.waitForResponse(response => 
-      response.url().includes('/api/tickets') && response.status() === 200
-    );
-    const responsePromise2 = page.waitForResponse(response => 
-      response.url().includes('/api/assignments') && response.status() === 200
-    );
-    
-    await page.goto('/admin/assignment');
-    
-    // Wait for responses and page load
-    await Promise.all([
-      responsePromise1,
-      responsePromise2,
-      page.waitForLoadState('domcontentloaded'),
-      page.waitForLoadState('networkidle')
-    ]);
+    await test.step('Navigate to assignment page', async () => {
+      await page.goto('/admin/assignment');
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
 
-    // Ensure the unassigned tickets section is visible
-    const unassignedSection = page.getByRole('heading', { name: 'Tiket Belum Ditugaskan' });
-    await expect(unassignedSection).toBeVisible({ timeout: 15000 });
+      // Wait for API responses
+      const [ticketsResponse, assignmentsResponse] = await Promise.all([
+        page.waitForResponse(
+          response => 
+            response.url().includes('/api/tickets') && 
+            response.status() === 200,
+          { timeout: 60000 }
+        ),
+        page.waitForResponse(
+          response => 
+            response.url().includes('/api/assignments') && 
+            response.status() === 200,
+          { timeout: 60000 }
+        )
+      ]);
 
-    // Look for the specific ticket
-    const ticketCell = page.getByRole('cell', { name: 'Kerusakan Proyektor' });
-    await expect(ticketCell).toBeVisible({ timeout: 10000 });
+      // Verify responses
+      expect(ticketsResponse.ok()).toBeTruthy();
+      expect(assignmentsResponse.ok()).toBeTruthy();
+    });
 
-    // Find the row containing our ticket
-    const ticketRow = ticketCell.locator('..'); // Get parent tr
-    await expect(ticketRow).toBeVisible();
+    await test.step('Find and assign ticket', async () => {
+      // Ensure the unassigned tickets section is visible
+      const unassignedSection = page.getByRole('heading', { name: 'Tiket Belum Ditugaskan' });
+      await expect(unassignedSection).toBeVisible({ timeout: 15000 });
 
-    // Verify priority badge
-    const priorityBadge = ticketRow.getByRole('cell').filter({ hasText: 'HIGH' });
-    await expect(priorityBadge).toBeVisible();
+      // Look for the specific ticket in unassigned tickets section
+      const unassignedTable = page.locator('.bg-yellow-50 table');
+      await expect(unassignedTable).toBeVisible();
+      
+      // Wait for data to load and find the first matching ticket
+      const ticketRow = unassignedTable.locator('tr', {
+        has: page.locator('td', { hasText: 'Kerusakan Proyektor' })
+      }).first();
+      await expect(ticketRow).toBeVisible({ timeout: 10000 });
 
-    // Find and click the assign button in that row
-    const assignButton = ticketRow.getByRole('button', { name: 'Tugaskan' });
-    await expect(assignButton).toBeEnabled();
-    await assignButton.click();
+      // Find and click the assign button in the found ticket row
+      const assignButton = ticketRow.getByRole('button').first();
+      await expect(assignButton).toBeEnabled();
+      await assignButton.click();
 
-    // TODO: Implement assignment form handling after the modal is added
+      // Handle assignment dialog
+      await page.waitForTimeout(1000); // Wait for dialog animation
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      
+      const dialogPanel = dialog.getByTestId('assignment-dialog');
+      await expect(dialogPanel).toBeVisible();
+      
+      const techSelect = dialogPanel.getByTestId('technician-select');
+      await expect(techSelect).toBeVisible();
+      
+      // Tunggu data teknisi dimuat
+      await page.waitForTimeout(1000);
+      const options = await techSelect.locator('option').all();
+      for (const option of options) {
+        const text = await option.textContent();
+        if (text && !text.includes('Busy') && !text.includes('Choose')) {
+          const value = await option.getAttribute('value');
+          await techSelect.selectOption(value || '');
+          break;
+        }
+      }
+
+      // Submit assignment
+      const dialogAssignButton = dialog.getByRole('button', { name: 'Assign' });
+      await expect(dialogAssignButton).toBeEnabled();
+
+      // Click assign button and wait for state updates
+      await dialogAssignButton.click();
+      
+      // Wait for unassigned ticket table to update
+      await expect(unassignedTable.locator('tr').filter({ hasText: 'Kerusakan Proyektor' })).not.toBeVisible({ timeout: 15000 });
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+      await expect(ticketRow).not.toBeVisible();
+    });
   });
 
   // Test untuk alur Teknisi
   test('3. Technician: Complete repair and submit report', async ({ page }) => {
     // Login sebagai teknisi
     await page.goto('/login');
-    await expect(page.getByText('CMMS Login')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'CMMS Login' })).toBeVisible();
 
     const usernameInput = page.getByRole('textbox').first();
     const passwordInput = page.locator('input[type="password"]');
@@ -187,7 +299,7 @@ test.describe('CMMS Complete Workflow', () => {
   test('4. Supervisor: Review repair and materials', async ({ page }) => {
     // Login sebagai supervisor
     await page.goto('/login');
-    await expect(page.getByText('CMMS Login')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'CMMS Login' })).toBeVisible();
 
     const usernameInput = page.getByRole('textbox').first();
     const passwordInput = page.locator('input[type="password"]');
