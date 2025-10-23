@@ -39,7 +39,7 @@ export default function SupervisorLayout({
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <nav className="w-64 bg-blue-800 text-white h-full fixed left-0 z-50">
+      <nav className="w-64 bg-blue-800 text-white fixed inset-y-0 left-0 z-50 flex flex-col">
         {/* Logo */}
         <div className="h-16 flex items-center justify-center border-b border-blue-700">
           <Link href="/supervisor/dashboard" className="text-xl font-bold">
@@ -47,8 +47,8 @@ export default function SupervisorLayout({
           </Link>
         </div>
 
-        {/* Menu Items */}
-        <div className="py-4">
+  {/* Menu Items */}
+  <div className="py-4 flex-1 overflow-y-auto">
           {supervisorMenuItems.map((item) => (
             <Link
               key={item.href}
@@ -66,8 +66,8 @@ export default function SupervisorLayout({
         </div>
 
         {/* User Menu - Fixed at bottom */}
-        <div className="absolute bottom-0 w-full border-t border-blue-700">
-          <div className="p-4">
+        <div className="w-full border-t border-blue-700">
+          <div className="p-4 mt-auto">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center w-full px-2 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 hover:text-white rounded-lg"

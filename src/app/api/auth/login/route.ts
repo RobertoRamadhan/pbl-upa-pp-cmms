@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { compare } from 'bcrypt'
-import { user_role } from '@prisma/client'
+
+// Local type for user roles (mirror of Prisma enum `user_role`)
+type UserRole = 'ADMIN' | 'STAFF' | 'TECHNICIAN' | 'SUPERVISOR'
 
 export async function POST(request: Request) {
   try {
@@ -36,16 +38,16 @@ export async function POST(request: Request) {
     }
     
     // Map frontend role ke database role
-    const roleMap: Record<string, user_role> = {
-      'admin': 'ADMIN' as user_role,
-      'staff': 'STAFF' as user_role,
-      'teknisi': 'TECHNICIAN' as user_role,
-      'supervisor': 'SUPERVISOR' as user_role
+    const roleMap: Record<string, UserRole> = {
+      admin: 'ADMIN',
+      staff: 'STAFF',
+      teknisi: 'TECHNICIAN',
+      supervisor: 'SUPERVISOR',
     };
 
     console.log('Received role from frontend:', role);
 
-    const dbRole = roleMap[role];
+  const dbRole = roleMap[role] as UserRole | undefined;
     console.log('Mapped role:', { 
       received: role,
       mapped: dbRole,
@@ -121,9 +123,28 @@ export async function POST(request: Request) {
       )
     }
 
+    // Defensive: ensure password is present in DB before calling bcrypt
+    if (!user.password) {
+      console.error('User has no password set in DB:', { id: user.id, username: user.username })
+      return NextResponse.json(
+        { error: 'Username atau password salah' },
+        { status: 401 }
+      )
+    }
+
     console.log('Verifying password...')
-    const passwordMatch = await compare(password, user.password)
-    
+    let passwordMatch = false
+    try {
+      passwordMatch = await compare(password, user.password)
+    } catch (err) {
+      // If bcrypt throws, log and return an auth error (avoid 500)
+      console.error('Error while comparing password hashes:', err)
+      return NextResponse.json(
+        { error: 'Username atau password salah' },
+        { status: 401 }
+      )
+    }
+
     console.log('Password verification result:', {
       isMatch: passwordMatch
     })
