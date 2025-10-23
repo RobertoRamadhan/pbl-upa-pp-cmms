@@ -18,11 +18,11 @@ export async function GET(request: Request) {
         user_assignment_technicianIdTouser: {
           select: {
             name: true,
-            technicianprofile: true,
+            technicianProfile: true,
           },
         },
-        repairlog: true,
-        material: true,
+        repairLogs: true,
+        materials: true,
       },
       orderBy: {
         assignedAt: 'desc',
@@ -50,28 +50,35 @@ export async function POST(request: Request) {
       notes,
     } = body
 
-    const assignment = await prisma.assignment.create({
-      data: {
-        ticketId,
-        technicianId,
-        assignedById,
-        notes,
-      },
-      include: {
-        ticket: true,
-        user_assignment_technicianIdTouser: {
-          select: {
-            name: true,
+    // Create assignment and update ticket in transaction
+    const [assignment] = await prisma.$transaction([
+      prisma.assignment.create({
+        data: {
+          notes,
+          ticket: {
+            connect: { id: ticketId }
+          },
+          user_assignment_technicianIdTouser: {
+            connect: { id: technicianId }
+          },
+          user_assignment_assignedByIdTouser: {
+            connect: { id: assignedById }
+          }
+        },
+        include: {
+          ticket: true,
+          user_assignment_technicianIdTouser: {
+            select: {
+              name: true,
+            },
           },
         },
-      },
-    })
-
-    // Update ticket status
-    await prisma.ticket.update({
-      where: { id: ticketId },
-      data: { status: 'ASSIGNED' },
-    })
+      }),
+      prisma.ticket.update({
+        where: { id: ticketId },
+        data: { status: 'ASSIGNED' },
+      })
+    ]);
 
     return NextResponse.json(assignment)
   } catch (error) {

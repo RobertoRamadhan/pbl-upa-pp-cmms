@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import AssignmentDialog from "./AssignmentDialog";
 
 interface Assignment {
   id: string;
@@ -15,6 +16,8 @@ export default function AssignmentPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [unassignedTickets, setUnassignedTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string>('');
 
   const fetchData = async () => {
     try {
@@ -57,15 +60,39 @@ export default function AssignmentPage() {
     fetchData();
   }, []);
 
-  const handleAssign = async (ticketId: string) => {
+  const handleAssignClick = (ticketId: string) => {
+    setSelectedTicketId(ticketId);
+    setIsAssignDialogOpen(true);
+  };
+
+  const handleAssign = async (technicianId: string) => {
     try {
-      // Show assignment modal or form here
-      alert('Implement assignment modal');
-      // After successful assignment, refresh the data
+      // Get the current user's ID (who is doing the assignment)
+      const user = JSON.parse(localStorage.getItem('user_session') || '{}');
+      if (!user.id) throw new Error('No user found');
+
+      const response = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ticketId: selectedTicketId,
+          technicianId,
+          assignedById: user.id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create assignment');
+      }
+
+      // Wait for UI to settle
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await fetchData();
     } catch (error) {
       console.error('Error assigning ticket:', error);
-      alert('Failed to assign ticket');
+      throw error;
     }
   };
 
@@ -85,6 +112,7 @@ export default function AssignmentPage() {
   };
 
   return (
+    <>
     <div className="p-4 sm:p-6 text-black">
       <h1 className="text-2xl font-semibold mb-6">Manajemen Penugasan</h1>
 
@@ -122,9 +150,19 @@ export default function AssignmentPage() {
                     {new Date(ticket.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-2">
+                    <button 
+                      onClick={() => handleAssignClick(ticket.id)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                      data-testid={`assign-ticket-${ticket.id}`}
+                    >
+                      Tugaskan
+                    </button>
+                  </td>
+                  <td className="px-4 py-2">
                     <button
                       className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                      onClick={() => handleAssign(ticket.id)}
+                      onClick={() => handleAssignClick(ticket.id)}
+                      data-testid={`assign-ticket-${ticket.id}`}
                     >
                       Tugaskan
                     </button>
@@ -168,54 +206,62 @@ export default function AssignmentPage() {
                   </td>
                 </tr>
               ) : (
-                assignments.map((assignment) => (
-                  <tr
-                    key={assignment.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      {assignment.id}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      {assignment.reportId}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      {assignment.reportTitle}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      {assignment.technician}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${getStatusColor(
-                          assignment.status
-                        )}`}
-                      >
-                        {assignment.status}
-                      </span>
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      {assignment.assignedAt ? new Date(assignment.assignedAt).toLocaleDateString() : '-'}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
-                      <div className="flex space-x-3">
-                        <button className="text-blue-600 hover:text-blue-900 transition-colors">
-                          Detail
+              assignments.map((assignment: Assignment) => (
+                <tr
+                  key={assignment.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                    {assignment.id}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                    {assignment.reportId}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                    {assignment.reportTitle}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                    {assignment.technician}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${getStatusColor(
+                        assignment.status
+                      )}`}
+                    >
+                      {assignment.status}
+                    </span>
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                    {assignment.assignedAt ? new Date(assignment.assignedAt).toLocaleDateString() : '-'}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 whitespace-nowrap">
+                    <div className="flex space-x-3">
+                      <button className="text-blue-600 hover:text-blue-900 transition-colors">
+                        Detail
+                      </button>
+                      {assignment.status === "waitingApproval" && (
+                        <button className="text-green-600 hover:text-green-900 transition-colors">
+                          Approve
                         </button>
-                        {assignment.status === "waitingApproval" && (
-                          <button className="text-green-600 hover:text-green-900 transition-colors">
-                            Approve
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
       </div>
     </div>
+
+    <AssignmentDialog
+      isOpen={isAssignDialogOpen}
+      onClose={() => setIsAssignDialogOpen(false)}
+      ticketId={selectedTicketId}
+      onAssign={handleAssign}
+    />
+    </>
   );
 }

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         email: true,
         phone: true,
         department: true,
-        technicianprofile: {
+        technicianProfile: {
           select: {
             expertise: true,
             area: true,
@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
       email: tech.email,
       phoneNumber: tech.phone,
       department: tech.department,
-      expertise: tech.technicianprofile?.expertise ?? null,
-      area: tech.technicianprofile?.area ?? null,
-      shift: tech.technicianprofile?.shift ?? null,
-      rating: tech.technicianprofile?.rating ?? 0,
-      totalTasks: tech.technicianprofile?.totalTasks ?? 0,
+      expertise: tech.technicianProfile?.expertise ?? null,
+      area: tech.technicianProfile?.area ?? null,
+      shift: tech.technicianProfile?.shift ?? null,
+      rating: tech.technicianProfile?.rating ?? 0,
+      totalTasks: tech.technicianProfile?.totalTasks ?? 0,
       status: tech.assignment_assignment_technicianIdTouser.length > 0 ? 'Busy' : 'Available' as const
     }));
 

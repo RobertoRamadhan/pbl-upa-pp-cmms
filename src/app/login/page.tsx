@@ -156,7 +156,20 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        console.error('Login failed:', data.error);
+        console.error('Login failed:', {
+          status: response.status,
+          error: data.error,
+          details: data.details
+        });
+        
+        // Handle validation errors
+        if (response.status === 400 && data.details) {
+          const errors = Object.values(data.details).filter(Boolean);
+          setError(errors.join(', '));
+          return;
+        }
+        
+        // Handle authentication errors
         setError(data.error || 'Username atau password salah');
         return;
       }
@@ -175,8 +188,15 @@ export default function LoginPage() {
       await router.replace(dashboardPath);
       
     } catch (err) {
-      console.error(err);
-      setError('Terjadi kesalahan saat login. Silakan coba lagi.');
+      console.error('Login error:', err);
+      // Check if it's a network error
+      if (err instanceof Error) {
+        if ('TypeError: Failed to fetch' === err.toString()) {
+          setError('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+        } else {
+          setError('Terjadi kesalahan saat login. Silakan coba lagi.');
+        }
+      }
     } finally {
       setIsLoading(false);
     }

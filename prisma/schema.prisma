@@ -57,7 +57,7 @@ model MaintenanceHistory {
 }
 
 model Assignment {
-  id                                 String            @id
+  id                                 String            @id @default(uuid())
   ticketId                           String            @unique(map: "Assignment_ticketId_key")
   technicianId                       String
   assignedById                       String
@@ -66,7 +66,7 @@ model Assignment {
   startTime                          DateTime?
   endTime                            DateTime?
   assignedAt                         DateTime          @default(now())
-  updatedAt                          DateTime
+  updatedAt                          DateTime          @updatedAt
   user_assignment_assignedByIdTouser User              @relation("assignment_assignedByIdTouser", fields: [assignedById], references: [id], map: "Assignment_assignedById_fkey")
   user_assignment_technicianIdTouser User              @relation("assignment_technicianIdTouser", fields: [technicianId], references: [id], map: "Assignment_technicianId_fkey")
   ticket                             Ticket            @relation(fields: [ticketId], references: [id], map: "Assignment_ticketId_fkey")
