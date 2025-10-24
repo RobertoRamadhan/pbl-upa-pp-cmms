@@ -40,7 +40,19 @@ export async function middleware(request: NextRequest) {
 
     console.log('Middleware - User found:', { id: user.id, role: user.role });
 
-    // Role check
+    // Role check for admin routes
+    if (
+      (request.nextUrl.pathname.startsWith('/admin') ||
+        request.nextUrl.pathname.startsWith('/api/admin')) &&
+      user.role !== 'ADMIN'
+    ) {
+      if (request.nextUrl.pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    // Role check for supervisor routes
     if (
       (request.nextUrl.pathname.startsWith('/supervisor') ||
         request.nextUrl.pathname.startsWith('/api/supervisor')) &&
