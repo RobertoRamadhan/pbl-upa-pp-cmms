@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface TicketForm {
   category: string;
@@ -11,6 +12,7 @@ interface TicketForm {
 }
 
 export default function NewTicket() {
+  const router = useRouter();
   const [formData, setFormData] = useState<TicketForm>({
     category: '',
     location: '',
@@ -36,9 +38,27 @@ export default function NewTicket() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement API call to submit ticket
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      const response = await fetch('/api/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          status: 'PENDING',
+          priority: formData.priority.toUpperCase()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create ticket');
+      }
+
+      const data = await response.json();
+      
       alert('Tiket berhasil dibuat!');
+      router.push('/staff/tickets');
+      
       // Reset form
       setFormData({
         category: '',
@@ -48,6 +68,7 @@ export default function NewTicket() {
         priority: 'medium'
       });
     } catch (error) {
+      console.error('Error creating ticket:', error);
       alert('Gagal membuat tiket. Silakan coba lagi.');
     } finally {
       setIsSubmitting(false);

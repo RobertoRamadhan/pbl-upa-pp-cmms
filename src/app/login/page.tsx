@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
-type RoleType = 'staff' | 'admin' | 'teknisi';
+type RoleType = 'staff' | 'admin' | 'teknisi' | 'supervisor';
 
 interface Role {
   id: RoleType;
@@ -45,6 +45,13 @@ export default function LoginPage() {
       description: 'Administrator'
     },
     {
+      id: 'supervisor',
+      name: 'Supervisor',
+      icon: '👨‍💼',
+      color: 'bg-purple-500 hover:bg-purple-600',
+      description: 'kepala uppa'
+    },
+    {
       id: 'teknisi',
       name: 'Teknisi',
       icon: '🔧',
@@ -77,7 +84,7 @@ export default function LoginPage() {
         }
 
         const role = session.role as RoleType;
-        const validRoles: RoleType[] = ['admin', 'staff', 'teknisi'];
+        const validRoles: RoleType[] = ['admin', 'staff', 'teknisi', 'supervisor'];
         
         if (!validRoles.includes(role)) {
           console.log('Invalid role in session:', role);
@@ -89,7 +96,8 @@ export default function LoginPage() {
         const rolePathMap: Record<RoleType, string> = {
           'admin': 'admin',
           'staff': 'staff',
-          'teknisi': 'teknisi'
+          'teknisi': 'teknisi',
+          'supervisor': 'supervisor'
         };
 
         const dashboardPath = `/${rolePathMap[role]}/dashboard`;
@@ -148,7 +156,20 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        console.error('Login failed:', data.error);
+        console.error('Login failed:', {
+          status: response.status,
+          error: data.error,
+          details: data.details
+        });
+        
+        // Handle validation errors
+        if (response.status === 400 && data.details) {
+          const errors = Object.values(data.details).filter(Boolean);
+          setError(errors.join(', '));
+          return;
+        }
+        
+        // Handle authentication errors
         setError(data.error || 'Username atau password salah');
         return;
       }
@@ -167,8 +188,15 @@ export default function LoginPage() {
       await router.replace(dashboardPath);
       
     } catch (err) {
-      console.error(err);
-      setError('Terjadi kesalahan saat login. Silakan coba lagi.');
+      console.error('Login error:', err);
+      // Check if it's a network error
+      if (err instanceof Error) {
+        if ('TypeError: Failed to fetch' === err.toString()) {
+          setError('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+        } else {
+          setError('Terjadi kesalahan saat login. Silakan coba lagi.');
+        }
+      }
     } finally {
       setIsLoading(false);
     }

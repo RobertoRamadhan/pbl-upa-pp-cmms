@@ -62,6 +62,7 @@ export default function Home() {
             transform: `translate(${mousePosition.x * -0.02}px, ${mousePosition.y * -0.02}px) scale(1.1)`
           }}
         />
+        {/* Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-blue-900/40 to-purple-900/60" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
       </div>

@@ -48,31 +48,62 @@ export async function GET(request: Request) {
 // POST - Create new ticket
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json();
     const {
       category,
       subject,
       description,
       location,
-      priority,
-      reporterId,
-      attachments,
-    } = body
+      priority
+    } = body;
 
-    const ticketNumber = `TCKT-${Date.now()}`
+    // Generate unique ticket number
+    const ticketNumber = `TCKT-${Date.now()}`;
 
+    // Get current authenticated user (reporterId)
+    // TODO: Replace this with proper auth check
+    const user = await prisma.user.findFirst({
+      where: { role: 'STAFF' }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 401 }
+      );
+    }
+
+    // Create ticket
     const ticket = await prisma.ticket.create({
       data: {
+        id: `TCK-${Date.now()}`,
         ticketNumber,
         category,
         subject,
         description,
         location,
-        priority,
-        reporterId,
-        attachments,
+        priority: priority as any,
+        status: 'PENDING',
+        reporterId: user.id,
+        updatedAt: new Date()
       },
-    })
+    });
+
+    // Create notification for admin
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' }
+    });
+
+    // Create notifications for all admins
+    await Promise.all(admins.map(admin => 
+      prisma.notification.create({
+        data: {
+          userId: admin.id,
+          message: `New ticket created: ${subject} (${ticketNumber})`,
+          type: 'TICKET'
+        }
+      })
+    ));
 
     return NextResponse.json(ticket)
   } catch (error) {
