@@ -1,114 +1,407 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Bar } from 'react-chartjs-2';
 import {
-  PieChart,
-  Pie,
-  Cell,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
   Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+  Legend
+} from 'chart.js';
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState({
-    totalLaporan: 0,
-    menunggu: 0,
-    diproses: 0,
-    selesai: 0,
-  });
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-  const [pieData, setPieData] = useState([
-    { name: 'Menunggu', value: 0, color: '#ffcc00' },
-    { name: 'Diproses', value: 0, color: '#36a2eb' },
-    { name: 'Selesai', value: 0, color: '#4bc0c0' }
-  ]);
+interface DashboardStats {
+  currentStats: {
+    pending: number;
+    inProgress: number;
+    completed: number;
+    totalAssignments: number;
+    totalTickets: number;
+  };
+  recentAssignments: {
+    id: string;
+    ticketSubject: string;
+    technicianName: string;
+    technicianExpertise: string;
+    technicianArea: string;
+    status: string;
+    priority: string;
+    category: string;
+    location: string;
+    assignedAt: string;
+    department: string;
+  }[];
+  monthlyStats: {
+    month: string;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    totalTickets: number;
+  }[];
+  ticketCategories: {
+    category: string;
+    _count: {
+      category: number;
+    };
+  }[];
+}
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // nanti bisa fetch data dari API /api/tickets
-    setStats({
-      totalLaporan: 0,
-      menunggu: 0,
-      diproses: 0,
-      selesai: 0,
-    });
-  }, []);
+    let intervalId: NodeJS.Timeout;
+
+    const checkSessionAndFetchStats = async () => {
+      console.log('Starting to fetch dashboard data...');
+      try {
+        const sessionStr = localStorage.getItem('user_session');
+        if (!sessionStr) {
+          console.log('No session found, redirecting to login...');
+          setLoading(false); // Make sure to stop loading if no session
+          router.replace('/login');
+          return;
+        }
+
+        let session;
+        try {
+          session = JSON.parse(sessionStr);
+          console.log('Session found:', { 
+            hasId: !!session.id,
+            role: session.role,
+            isAdmin: session.role?.toLowerCase() === 'admin'
+          });
+        } catch (e) {
+          console.error('Failed to parse session:', e);
+          setLoading(false);
+          localStorage.removeItem('user_session');
+          router.replace('/login');
+          return;
+        }
+
+        if (!session.id || !session.role || session.role.toLowerCase() !== 'admin') {
+          console.log('Invalid session or not admin, redirecting to login...');
+          setLoading(false);
+          localStorage.removeItem('user_session');
+          router.replace('/login');
+          return;
+        }
+
+        console.log('Valid admin session found, fetching stats...');
+        await fetchDashboardStats(session.id, session.role);
+      } catch (err) {
+        console.error('Session check error:', err);
+        setLoading(false);
+        localStorage.removeItem('user_session');
+        router.replace('/login');
+      }
+    };
+
+    // Initial fetch
+    checkSessionAndFetchStats();
+
+    // Set up interval for real-time updates
+    intervalId = setInterval(checkSessionAndFetchStats, 30000); // Refresh every 30 seconds
+
+    // Cleanup interval on component unmount
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [router]);
+
+  const fetchDashboardStats = async (userId: string, userRole: string) => {
+    console.log('Fetching dashboard stats...');
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await fetch('/api/admin/dashboard-stats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': userId,
+          'x-user-role': userRole
+        },
+        credentials: 'include'
+      });
+
+      console.log('API Response received:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('Error response data:', errorData);
+
+        if (response.status === 401 || response.status === 403) {
+          console.log('Authentication failed, redirecting to login...');
+          localStorage.removeItem('user_session');
+          router.replace('/login');
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to fetch dashboard stats');
+      }
+      
+      const data = await response.json();
+      console.log('Dashboard data received:', {
+        currentStats: data.currentStats,
+        recentAssignmentsCount: data.recentAssignments?.length,
+        monthlyStatsCount: data.monthlyStats?.length,
+        recentAssignments: data.recentAssignments,
+        monthlyStats: data.monthlyStats
+      });
+
+      setStats(data);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard statistics');
+      setStats(null);
+    } finally {
+      console.log('Fetch completed, setting loading to false');
+      setLoading(false);
+    }
+  };
+
+  // Debug info for development
+  console.log('Render state:', { loading, error, hasStats: !!stats });
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-500 mb-4"></div>
+        <p className="text-gray-600">Loading dashboard data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="p-4 bg-red-100 text-red-700 rounded-lg max-w-md w-full">
+          <div className="font-bold mb-2">Error Loading Dashboard</div>
+          <div>{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Data akan otomatis menggunakan nilai default 0 melalui operator || di template
+
+  const chartData = {
+    labels: stats?.monthlyStats?.map(stat => stat.month) || [],
+    datasets: [
+      {
+        label: 'Pending',
+        data: stats?.monthlyStats?.map(stat => stat.pending) || [],
+        backgroundColor: 'rgba(251, 191, 36, 0.5)',
+        borderColor: 'rgb(251, 191, 36)',
+        borderWidth: 1
+      },
+      {
+        label: 'In Progress',
+        data: stats?.monthlyStats?.map(stat => stat.inProgress) || [],
+        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 1
+      },
+      {
+        label: 'Completed',
+        data: stats?.monthlyStats?.map(stat => stat.completed) || [],
+        backgroundColor: 'rgba(16, 185, 129, 0.5)',
+        borderColor: 'rgb(16, 185, 129)',
+        borderWidth: 1
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Statistik Tiket Bulanan'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-white text-black p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Judul */}
-        <h1 className="text-2xl font-bold text-green-700 mb-6">Dashboard Admin</h1>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
 
-        {/* Statistik Card */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
-          <div className="bg-white border-2 border-green-600 rounded-xl shadow p-4 text-center">
-            <p className="text-sm font-semibold text-gray-600">Total Laporan</p>
-            <p className="text-3xl font-bold text-green-700">{stats.totalLaporan}</p>
-          </div>
-          <div className="bg-yellow-100 border border-yellow-400 rounded-xl shadow p-4 text-center">
-            <p className="text-sm font-semibold text-gray-600">Pending</p>
-            <p className="text-3xl font-bold text-yellow-600">{stats.menunggu}</p>
-          </div>
-          <div className="bg-blue-100 border border-blue-400 rounded-xl shadow p-4 text-center">
-            <p className="text-sm font-semibold text-gray-600">On Progress</p>
-            <p className="text-3xl font-bold text-blue-600">{stats.diproses}</p>
-          </div>
-          <div className="bg-green-100 border border-green-400 rounded-xl shadow p-4 text-center">
-            <p className="text-sm font-semibold text-gray-600">Selesai</p>
-            <p className="text-3xl font-bold text-green-600">{stats.selesai}</p>
+      {/* Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-yellow-100 p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-yellow-800 text-sm font-medium">Pending</p>
+              <h3 className="text-2xl font-bold text-yellow-900">{stats?.currentStats?.pending || 0}</h3>
+              <p className="text-yellow-600 text-xs mt-1">dari {stats?.currentStats?.totalTickets || 0} tiket</p>
+            </div>
+            <div className="p-3 bg-yellow-200 rounded-full">
+              <svg className="w-6 h-6 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* Grafik Statistik */}
-        <div className="bg-white border-2 border-green-600 rounded-xl shadow p-6 text-center mb-10">
-          <h2 className="text-xl font-semibold mb-4 text-green-700">Grafik Statistik</h2>
-          {stats.totalLaporan === 0 ? (
-            <p className="text-gray-500 italic">Belum ada laporan</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry: any) => `${entry.name} ${(entry.percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
+        <div className="bg-blue-100 p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-800 text-sm font-medium">On Progress</p>
+              <h3 className="text-2xl font-bold text-blue-900">{stats?.currentStats?.inProgress || 0}</h3>
+              <p className="text-blue-600 text-xs mt-1">dari {stats?.currentStats?.totalTickets || 0} tiket</p>
+            </div>
+            <div className="p-3 bg-blue-200 rounded-full">
+              <svg className="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+          </div>
         </div>
 
-        {/* Assign Teknisi */}
-        <div className="bg-white border-2 border-green-600 rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold text-green-700 mb-4">Assign Teknisi</h2>
+        <div className="bg-green-100 p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-800 text-sm font-medium">Selesai</p>
+              <h3 className="text-2xl font-bold text-green-900">{stats?.currentStats?.completed || 0}</h3>
+              <p className="text-green-600 text-xs mt-1">dari {stats?.currentStats?.totalTickets || 0} tiket</p>
+            </div>
+            <div className="p-3 bg-green-200 rounded-full">
+              <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
 
-          {stats.totalLaporan === 0 ? (
-            <div className="text-center text-gray-500 italic">
-              Belum ada laporan yang ditugaskan.
+        <div className="bg-purple-100 p-6 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-800 text-sm font-medium">Total Penugasan</p>
+              <h3 className="text-2xl font-bold text-purple-900">{stats?.currentStats?.totalAssignments || 0}</h3>
+              <p className="text-purple-600 text-xs mt-1">Teknisi Ditugaskan</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {/* contoh isi data laporan nanti */}
-              <div className="flex justify-between items-center border-b pb-2">
-                <div>
-                  <p className="font-semibold">#1 Ruang Server</p>
-                  <p className="text-gray-500 text-sm">AC Rusak</p>
-                </div>
-                <span className="bg-blue-200 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                  On Progress
-                </span>
-              </div>
+            <div className="p-3 bg-purple-200 rounded-full">
+              <svg className="w-6 h-6 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
             </div>
-          )}
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <Bar data={chartData} options={chartOptions} />
+      </div>
+
+      {/* Recent Assignments Table */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Penugasan Terbaru</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tiket
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Teknisi & Department
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status & Prioritas
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Lokasi & Kategori
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+                        {stats?.recentAssignments?.map((assignment) => (
+                <tr key={assignment.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {assignment.ticketSubject}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">{assignment.technicianName}</div>
+                      <div className="text-gray-500">{assignment.department}</div>
+                      <div className="text-gray-500 text-xs">{assignment.technicianExpertise}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col gap-1">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${assignment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          assignment.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                          'bg-green-100 text-green-800'}`}>
+                        {assignment.status}
+                      </span>
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${assignment.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
+                          assignment.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-800' :
+                          'bg-gray-100 text-gray-800'}`}>
+                        {assignment.priority}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm">
+                      <div className="text-gray-900">{assignment.location}</div>
+                      <div className="text-gray-500 text-xs">{assignment.category}</div>
+                      <div className="text-gray-500 text-xs">
+                        {new Date(assignment.assignedAt).toLocaleDateString('id-ID', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
