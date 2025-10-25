@@ -1,19 +1,35 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { compare } from 'bcrypt'
-import { user_role } from '@prisma/client'
 
 export async function POST(request: Request) {
   try {
     console.log('Received login request')
-    
-    const body = await request.json()
-    console.log('Request body:', { 
+
+    // Ensure request has JSON content-type
+    const contentType = request.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.warn('Login request with non-JSON content-type:', contentType);
+      return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 400 });
+    }
+
+    // Parse JSON body with explicit error handling to avoid Next returning HTML error pages
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('Failed to parse JSON body for login:', parseError);
+      const text = await request.text().catch(() => '');
+      console.error('Raw request body (truncated):', (text || '').slice(0, 200));
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    console.log('Request body:', {
       username: body.username,
       role: body.role,
       hasPassword: !!body.password
     })
-    
+
     const { username, password, role } = body
     
     if (!username || !password || !role) {
@@ -35,12 +51,12 @@ export async function POST(request: Request) {
       )
     }
     
-    // Map frontend role ke database role
-    const roleMap: Record<string, user_role> = {
-      'admin': 'ADMIN' as user_role,
-      'staff': 'STAFF' as user_role,
-      'teknisi': 'TECHNICIAN' as user_role,
-      'supervisor': 'SUPERVISOR' as user_role
+    // Map frontend role ke database role (use plain strings to avoid relying on generated enum types)
+    const roleMap: Record<string, string> = {
+      'admin': 'ADMIN',
+      'staff': 'STAFF',
+      'teknisi': 'TECHNICIAN',
+      'supervisor': 'SUPERVISOR'
     };
 
     console.log('Received role from frontend:', role);

@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import type { NextRequest } from 'next/server';
-import { user_role } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
     const technicians = await prisma.user.findMany({
       where: {
-        role: "TECHNICIAN" as user_role,
+        role: "TECHNICIAN",
         isActive: true
       },
       select: {
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform the data to include availability status
-    const techniciansWithStatus = technicians.map((tech) => ({
+  const techniciansWithStatus = technicians.map((tech: any) => ({
       id: tech.id,
       name: tech.name,
       email: tech.email,
