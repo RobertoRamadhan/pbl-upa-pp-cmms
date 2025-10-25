@@ -183,15 +183,15 @@ export default function TeknisiDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Quick Stats - Mobile Friendly Cards */}
       <div className="grid grid-cols-3 gap-2 p-4">
-        <div className="bg-white rounded-lg p-3 shadow-sm">
+        <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-orange-500">
           <p className="text-xs text-black">Menunggu</p>
           <p className="text-xl font-bold text-orange-500">{stats.menunggu}</p>
         </div>
-        <div className="bg-white rounded-lg p-3 shadow-sm">
+        <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-blue-500">
           <p className="text-xs text-black">Dikerjakan</p>
           <p className="text-xl font-bold text-blue-500">{stats.dikerjakan}</p>
         </div>
-        <div className="bg-white rounded-lg p-3 shadow-sm">
+        <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-green-500">
           <p className="text-xs text-black">Selesai</p>
           <p className="text-xl font-bold text-green-500">{stats.selesai}</p>
         </div>

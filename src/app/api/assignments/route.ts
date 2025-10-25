@@ -1,12 +1,13 @@
-import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 
 // GET - Fetch all assignments
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const technicianId = searchParams.get('technicianId')
-    const status = searchParams.get('status')
+    const { searchParams } = new URL(request.url);
+    const technicianId = searchParams.get("technicianId");
+    const status = searchParams.get("status");
 
     const assignments = await prisma.assignment.findMany({
       where: {
@@ -18,44 +19,47 @@ export async function GET(request: Request) {
         user_assignment_technicianIdTouser: {
           select: {
             name: true,
-            technicianprofile: true,
+            technicianProfile: {
+              select: {
+                expertise: true,
+                area: true,
+                rating: true,
+              },
+            },
           },
         },
-        repairlog: true,
-        material: true,
+        repairLogs: true,
+        materials: true,
       },
       orderBy: {
-        assignedAt: 'desc',
+        assignedAt: "desc",
       },
-    })
+    });
 
-    return NextResponse.json(assignments)
+    return NextResponse.json(assignments);
   } catch (error) {
-    console.error('Error fetching assignments:', error)
+    console.error("Error fetching assignments:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch assignments' },
+      { error: "Failed to fetch assignments" },
       { status: 500 }
-    )
+    );
   }
 }
 
 // POST - Create new assignment
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const {
-      ticketId,
-      technicianId,
-      assignedById,
-      notes,
-    } = body
+    const body = await request.json();
+    const { ticketId, technicianId, assignedById, notes } = body;
 
     const assignment = await prisma.assignment.create({
       data: {
+        id: randomUUID(),
         ticketId,
         technicianId,
         assignedById,
         notes,
+        updatedAt: new Date(),
       },
       include: {
         ticket: true,
@@ -65,20 +69,20 @@ export async function POST(request: Request) {
           },
         },
       },
-    })
+    });
 
     // Update ticket status
     await prisma.ticket.update({
       where: { id: ticketId },
-      data: { status: 'ASSIGNED' },
-    })
+      data: { status: "ASSIGNED" },
+    });
 
-    return NextResponse.json(assignment)
+    return NextResponse.json(assignment);
   } catch (error) {
-    console.error('Error creating assignment:', error)
+    console.error("Error creating assignment:", error);
     return NextResponse.json(
-      { error: 'Failed to create assignment' },
+      { error: "Failed to create assignment" },
       { status: 500 }
-    )
+    );
   }
 }
