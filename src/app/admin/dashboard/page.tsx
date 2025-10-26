@@ -336,73 +336,97 @@ export default function DashboardPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Penugasan Terbaru</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tiket
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Teknisi & Department
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status & Prioritas
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lokasi & Kategori
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-                        {stats?.recentAssignments?.map((assignment) => (
-                <tr key={assignment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {assignment.ticketSubject}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-900">{assignment.technicianName}</div>
-                      <div className="text-gray-500">{assignment.department}</div>
-                      <div className="text-gray-500 text-xs">{assignment.technicianExpertise}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col gap-1">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${assignment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                          assignment.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                          'bg-green-100 text-green-800'}`}>
-                        {assignment.status}
-                      </span>
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${assignment.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
-                          assignment.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-800' :
-                          'bg-gray-100 text-gray-800'}`}>
-                        {assignment.priority}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
-                      <div className="text-gray-900">{assignment.location}</div>
-                      <div className="text-gray-500 text-xs">{assignment.category}</div>
-                      <div className="text-gray-500 text-xs">
-                        {new Date(assignment.assignedAt).toLocaleDateString('id-ID', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <div className="hidden md:block overflow-x-auto">
+  <table className="min-w-full divide-y divide-gray-200">
+    <thead className="bg-gray-50">
+      <tr>
+        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tiket</th>
+        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teknisi & Department</th>
+        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status & Prioritas</th>
+        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi & Kategori</th>
+      </tr>
+    </thead>
+    <tbody className="bg-white divide-y divide-gray-200">
+      {stats?.recentAssignments?.map((assignment) => (
+        <tr key={assignment.id} className="hover:bg-gray-50">
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm font-medium text-gray-900">{assignment.ticketSubject}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm">
+              <div className="font-medium text-gray-900">{assignment.technicianName}</div>
+              <div className="text-gray-500">{assignment.department}</div>
+              <div className="text-gray-500 text-xs">{assignment.technicianExpertise}</div>
+            </div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex flex-col gap-1">
+              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                ${assignment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                  assignment.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                  'bg-green-100 text-green-800'}`}>
+                {assignment.status}
+              </span>
+              <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                ${assignment.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
+                  assignment.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-800' :
+                  'bg-gray-100 text-gray-800'}`}>
+                {assignment.priority}
+              </span>
+            </div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm">
+              <div className="text-gray-900">{assignment.location}</div>
+              <div className="text-gray-500 text-xs">{assignment.category}</div>
+              <div className="text-gray-500 text-xs">
+                {new Date(assignment.assignedAt).toLocaleDateString('id-ID', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+            </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+{/* Tampilan kartu untuk layar kecil */}
+<div className="block md:hidden space-y-4">
+  {stats?.recentAssignments?.map((assignment) => (
+    <div key={assignment.id} className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
+      <div className="font-semibold text-gray-900 mb-1">{assignment.ticketSubject}</div>
+      <div className="text-sm text-gray-600 mb-2">
+        {assignment.technicianName} — {assignment.department}
+      </div>
+      <div className="flex flex-wrap gap-2 mb-2">
+        <span className={`px-2 py-1 text-xs font-semibold rounded-full 
+          ${assignment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+            assignment.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+            'bg-green-100 text-green-800'}`}>
+          {assignment.status}
+        </span>
+        <span className={`px-2 py-1 text-xs font-semibold rounded-full 
+          ${assignment.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
+            assignment.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-800' :
+            'bg-gray-100 text-gray-800'}`}>
+          {assignment.priority}
+        </span>
+      </div>
+      <div className="text-xs text-gray-500">
+        {assignment.location} — {assignment.category}<br />
+        {new Date(assignment.assignedAt).toLocaleDateString('id-ID', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })}
+      </div>
+    </div>
+  ))}
+</div>
       </div>
     </div>
   );
