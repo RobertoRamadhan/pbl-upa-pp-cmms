@@ -16,8 +16,8 @@ export default function SupervisorLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const pathname = usePathname();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const supervisorMenuItems: MenuItem[] = [
     { href: '/supervisor/dashboard', label: 'Dashboard', icon: '📊' },
@@ -29,13 +29,14 @@ export default function SupervisorLayout({
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', {
-        method: 'POST'
+        method: 'POST',
       });
       router.push('/login');
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -47,8 +48,8 @@ export default function SupervisorLayout({
           </Link>
         </div>
 
-  {/* Menu Items */}
-  <div className="py-4 flex-1 overflow-y-auto">
+        {/* Menu Items */}
+        <div className="py-4 flex-1 overflow-y-auto">
           {supervisorMenuItems.map((item) => (
             <Link
               key={item.href}
@@ -96,13 +97,21 @@ export default function SupervisorLayout({
             )}
           </div>
         </div>
+
+        {/* Logout Button */}
+        <div className="p-4 border-t border-blue-700">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200"
+          >
+            🚪 Logout
+          </button>
+        </div>
       </nav>
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 bg-gray-100 min-h-screen">
-        <main className="p-8">
-          {children}
-        </main>
+      <div className="ml-64 flex-1 flex flex-col min-h-screen bg-gray-100">
+        <main className="flex-1 p-8">{children}</main>
       </div>
     </div>
   );
