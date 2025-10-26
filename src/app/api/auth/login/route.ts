@@ -1,8 +1,29 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
-import { compare } from 'bcrypt'
+import { NextResponse, NextRequest } from 'next/server'
+import { compare } from 'bcryptjs'
+import { user_role as UserRole } from '@prisma/client'
 
-export async function POST(request: Request) {
+type FrontendRole = 'admin' | 'staff' | 'teknisi' | 'supervisor';
+
+interface LoginResponse {
+  id: string;
+  username: string;
+  role: FrontendRole;
+}
+
+interface LoginErrorResponse {
+  error: string;
+  details?: {
+    username: string | null;
+    password: string | null;
+    role: string | null;
+  };
+}
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+export async function POST(request: NextRequest): Promise<NextResponse<LoginResponse | LoginErrorResponse>> {
   try {
     console.log('Received login request')
 
@@ -50,9 +71,9 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    
-    // Map frontend role ke database role (use plain strings to avoid relying on generated enum types)
-    const roleMap: Record<string, string> = {
+
+    // Map frontend role ke database role (use type-safe mapping)
+    const roleMap: Record<string, UserRole> = {
       'admin': 'ADMIN',
       'staff': 'STAFF',
       'teknisi': 'TECHNICIAN',
@@ -61,7 +82,7 @@ export async function POST(request: Request) {
 
     console.log('Received role from frontend:', role);
 
-    const dbRole = roleMap[role];
+    const dbRole = roleMap[role] as UserRole | undefined;
     console.log('Mapped role:', { 
       received: role,
       mapped: dbRole,
@@ -137,9 +158,28 @@ export async function POST(request: Request) {
       )
     }
 
+    // Defensive: ensure password is present in DB before calling bcrypt
+    if (!user.password) {
+      console.error('User has no password set in DB:', { id: user.id, username: user.username })
+      return NextResponse.json(
+        { error: 'Username atau password salah' },
+        { status: 401 }
+      )
+    }
+
     console.log('Verifying password...')
-    const passwordMatch = await compare(password, user.password)
-    
+    let passwordMatch = false
+    try {
+      passwordMatch = await compare(password, user.password)
+    } catch (err) {
+      // If bcrypt throws, log and return an auth error (avoid 500)
+      console.error('Error while comparing password hashes:', err)
+      return NextResponse.json(
+        { error: 'Username atau password salah' },
+        { status: 401 }
+      )
+    }
+
     console.log('Password verification result:', {
       isMatch: passwordMatch
     })
@@ -164,8 +204,8 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       id: user.id,
       username: user.username,
-      role: frontendRole,
-    })
+      role: frontendRole as FrontendRole,
+    } satisfies LoginResponse)
 
     // Set secure cookies untuk autentikasi
     response.cookies.set('auth_token', user.id, {
