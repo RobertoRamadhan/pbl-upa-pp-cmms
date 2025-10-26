@@ -1,21 +1,56 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
-import { compare } from 'bcrypt'
+import { NextResponse, NextRequest } from 'next/server'
+import { compare } from 'bcryptjs'
+import { user_role as UserRole } from '@prisma/client'
 
-// Local type for user roles (mirror of Prisma enum `user_role`)
-type UserRole = 'ADMIN' | 'STAFF' | 'TECHNICIAN' | 'SUPERVISOR'
+type FrontendRole = 'admin' | 'staff' | 'teknisi' | 'supervisor';
 
-export async function POST(request: Request) {
+interface LoginResponse {
+  id: string;
+  username: string;
+  role: FrontendRole;
+}
+
+interface LoginErrorResponse {
+  error: string;
+  details?: {
+    username: string | null;
+    password: string | null;
+    role: string | null;
+  };
+}
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+export async function POST(request: NextRequest): Promise<NextResponse<LoginResponse | LoginErrorResponse>> {
   try {
     console.log('Received login request')
-    
-    const body = await request.json()
-    console.log('Request body:', { 
+
+    // Ensure request has JSON content-type
+    const contentType = request.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.warn('Login request with non-JSON content-type:', contentType);
+      return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 400 });
+    }
+
+    // Parse JSON body with explicit error handling to avoid Next returning HTML error pages
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('Failed to parse JSON body for login:', parseError);
+      const text = await request.text().catch(() => '');
+      console.error('Raw request body (truncated):', (text || '').slice(0, 200));
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    console.log('Request body:', {
       username: body.username,
       role: body.role,
       hasPassword: !!body.password
     })
-    
+
     const { username, password, role } = body
     
     if (!username || !password || !role) {
@@ -36,18 +71,18 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    
-    // Map frontend role ke database role
+
+    // Map frontend role ke database role (use type-safe mapping)
     const roleMap: Record<string, UserRole> = {
-      admin: 'ADMIN',
-      staff: 'STAFF',
-      teknisi: 'TECHNICIAN',
-      supervisor: 'SUPERVISOR',
+      'admin': 'ADMIN',
+      'staff': 'STAFF',
+      'teknisi': 'TECHNICIAN',
+      'supervisor': 'SUPERVISOR'
     };
 
     console.log('Received role from frontend:', role);
 
-  const dbRole = roleMap[role] as UserRole | undefined;
+    const dbRole = roleMap[role] as UserRole | undefined;
     console.log('Mapped role:', { 
       received: role,
       mapped: dbRole,
@@ -169,8 +204,8 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       id: user.id,
       username: user.username,
-      role: frontendRole,
-    })
+      role: frontendRole as FrontendRole,
+    } satisfies LoginResponse)
 
     // Set secure cookies untuk autentikasi
     response.cookies.set('auth_token', user.id, {

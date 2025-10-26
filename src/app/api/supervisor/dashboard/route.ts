@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { user_role, assignment_status } from '@prisma/client'
 
 export async function GET() {
   try {
@@ -10,21 +9,21 @@ export async function GET() {
     // Fetch active assignments
     const activeAssignments = await prisma.assignment.count({
       where: {
-        status: assignment_status.IN_PROGRESS
+        status: 'IN_PROGRESS'
       }
     })
 
     // Fetch completed tasks
     const completedTasks = await prisma.assignment.count({
       where: {
-        status: assignment_status.COMPLETED
+        status: 'COMPLETED'
       }
     })
 
     // Calculate average completion time (in hours)
     const completedAssignments = await prisma.assignment.findMany({
       where: {
-        status: assignment_status.COMPLETED,
+  status: 'COMPLETED',
         endTime: {
           not: null
         }
@@ -36,7 +35,7 @@ export async function GET() {
     })
 
     let totalHours = 0
-    completedAssignments.forEach(assignment => {
+  completedAssignments.forEach((assignment: any) => {
       if (assignment.startTime && assignment.endTime) {
         const hours = Math.abs(assignment.endTime.getTime() - assignment.startTime.getTime()) / 36e5
         totalHours += hours
@@ -49,23 +48,23 @@ export async function GET() {
     // Fetch technician performance data
     const technicians = await prisma.user.findMany({
       where: {
-        role: 'TECHNICIAN' as user_role
+        role: 'TECHNICIAN'
       },
       include: {
         assignment_assignment_technicianIdTouser: {
           where: {
-            status: assignment_status.COMPLETED
+            status: 'COMPLETED'
           }
         }
       }
     })
 
-    const technicianPerformance = technicians.map(tech => {
+    const technicianPerformance = technicians.map((tech: any) => {
       const assignments = tech.assignment_assignment_technicianIdTouser
       const tasksCompleted = assignments.length
       
       // Calculate on-time percentage (assuming target time is 48 hours)
-      const onTimeAssignments = assignments.filter(assignment => {
+  const onTimeAssignments = assignments.filter((assignment: any) => {
         if (assignment.startTime && assignment.endTime) {
           const hours = Math.abs(assignment.endTime.getTime() - assignment.startTime.getTime()) / 36e5
           return hours <= 48

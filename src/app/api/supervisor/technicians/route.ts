@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import type { NextRequest } from 'next/server';
-
-type UserRole = 'ADMIN' | 'STAFF' | 'TECHNICIAN' | 'SUPERVISOR';
+import { user_role } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
     const technicians = await prisma.user.findMany({
       where: {
-        role: 'TECHNICIAN' as UserRole,
-        isActive: true,
+        role: user_role.TECHNICIAN,
+        isActive: true
       },
       select: {
         id: true,

@@ -146,7 +146,20 @@ export default function LoginPage() {
 
       console.log('Server response status:', response.status);
 
-      const data = await response.json();
+      // Read raw response text first (reading once) and attempt to parse JSON.
+      // This avoids "body stream already read" when response.json() fails and
+      // we try to read response.text() afterwards.
+      const raw = await response.text();
+      let data: any = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch (parseErr) {
+        console.error('Failed to parse JSON response. Response text:', raw);
+        setError(
+          `Server returned unexpected response (status ${response.status}). See console for details.`
+        );
+        return;
+      }
       console.log('Server response data:', {
         success: response.ok,
         statusCode: response.status,
