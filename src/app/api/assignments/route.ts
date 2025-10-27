@@ -19,13 +19,7 @@ export async function GET(request: Request) {
         user_assignment_technicianIdTouser: {
           select: {
             name: true,
-            technicianProfile: {
-              select: {
-                expertise: true,
-                area: true,
-                rating: true,
-              },
-            },
+            technicianprofile: true,
           },
         },
         repairLogs: true,
@@ -54,12 +48,10 @@ export async function POST(request: Request) {
 
     const assignment = await prisma.assignment.create({
       data: {
-        id: randomUUID(),
         ticketId,
         technicianId,
         assignedById,
         notes,
-        updatedAt: new Date(),
       },
       include: {
         ticket: true,
@@ -69,13 +61,13 @@ export async function POST(request: Request) {
           },
         },
       },
-    });
+    })
 
     // Update ticket status
     await prisma.ticket.update({
       where: { id: ticketId },
-      data: { status: "ASSIGNED" },
-    });
+      data: { status: 'ASSIGNED' },
+    })
 
     return NextResponse.json(assignment);
   } catch (error) {

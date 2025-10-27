@@ -15,11 +15,11 @@ async function main() {
     console.log('Clearing existing data...');
     await prisma.ticket.deleteMany();
     await prisma.technicianProfile.deleteMany();
-    await prisma.user.deleteMany();
+    await prisma.systemUser.deleteMany();
     console.log('Existing data cleared');
     // Create admin user
     const adminPassword = await hash('admin123', 10);
-    const admin = await prisma.user.create({
+    const admin = await prisma.systemUser.create({
       data: {
         id: 'admin-1',
         username: 'admin',
@@ -35,7 +35,7 @@ async function main() {
 
     // Create technician user
     const techPassword = await hash('tech123', 10);
-    const technician = await prisma.user.create({
+    const technician = await prisma.systemUser.create({
       data: {
         id: 'tech-1',
         username: 'technician',
@@ -62,7 +62,7 @@ async function main() {
 
     // Create staff user
     const staffPassword = await hash('staff123', 10);
-    const staff = await prisma.user.create({
+    const staff = await prisma.systemUser.create({
       data: {
         id: 'staff-1',
         username: 'staff',
@@ -78,7 +78,7 @@ async function main() {
 
     // Create supervisor user
     const supervisorPassword = await hash('supervisor123', 10);
-    const supervisor = await prisma.user.create({
+    const supervisor = await prisma.systemUser.create({
       data: {
         id: 'supervisor-1',
         username: 'supervisor',

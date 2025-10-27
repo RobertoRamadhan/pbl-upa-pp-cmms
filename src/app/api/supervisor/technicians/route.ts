@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const technicians = await prisma.user.findMany({
       where: {
         role: "TECHNICIAN" as user_role,
-        isActive: true,
+        isActive: true
       },
       select: {
         id: true,
@@ -39,21 +39,18 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform the data to include availability status
-    const techniciansWithStatus = technicians.map((tech) => ({
+    const techniciansWithStatus = technicians.map((tech: any) => ({
       id: tech.id,
       name: tech.name,
       email: tech.email,
       phoneNumber: tech.phone,
       department: tech.department,
-      expertise: tech.technicianProfile?.expertise ?? null,
-      area: tech.technicianProfile?.area ?? null,
-      shift: tech.technicianProfile?.shift ?? null,
-      rating: tech.technicianProfile?.rating ?? 0,
-      totalTasks: tech.technicianProfile?.totalTasks ?? 0,
-      status:
-        tech.assignment_assignment_technicianIdTouser.length > 0
-          ? "Busy"
-          : ("Available" as const),
+      expertise: tech.technicianprofile?.expertise ?? null,
+      area: tech.technicianprofile?.area ?? null,
+      shift: tech.technicianprofile?.shift ?? null,
+      rating: tech.technicianprofile?.rating ?? 0,
+      totalTasks: tech.technicianprofile?.totalTasks ?? 0,
+      status: tech.assignment_assignment_technicianIdTouser.length > 0 ? 'Busy' : 'Available' as const
     }));
 
     return NextResponse.json(techniciansWithStatus);
@@ -73,8 +70,8 @@ export async function POST(request: NextRequest) {
     const technician = await prisma.user.create({
       data: {
         ...data,
-        role: "TECHNICIAN",
-      },
+        role: "TECHNICIAN"
+      }
     });
 
     return NextResponse.json(technician);

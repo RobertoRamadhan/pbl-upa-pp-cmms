@@ -1,19 +1,70 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
-import { compare } from 'bcrypt'
-import { user_role } from '@prisma/client'
+import { NextResponse, NextRequest } from 'next/server'
+import { compare } from 'bcryptjs'
+import { user_role as UserRole } from '@prisma/client'
 
-export async function POST(request: Request) {
+type FrontendRole = 'admin' | 'staff' | 'teknisi' | 'supervisor';
+
+interface LoginResponse {
+  id: string;
+  username: string;
+  role: FrontendRole;
+}
+
+interface LoginErrorResponse {
+  error: string;
+  details?: {
+    username: string | null;
+    password: string | null;
+    role: string | null;
+  };
+}
+
+// Create reverse mapping for converting DB role to frontend role
+const dbToFrontendRole: Record<UserRole, FrontendRole> = {
+  'ADMIN': 'admin',
+  'STAFF': 'staff',
+  'TECHNICIAN': 'teknisi',
+  'SUPERVISOR': 'supervisor'
+};
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+export async function POST(request: NextRequest): Promise<NextResponse<LoginResponse | LoginErrorResponse>> {
+  let body: any = undefined;
   try {
     console.log('Received login request')
     
-    const body = await request.json()
-    console.log('Request body:', { 
+    // Set execution timeout
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 5000)
+    );
+
+    // Ensure request has JSON content-type
+    const contentType = request.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.warn('Login request with non-JSON content-type:', contentType);
+      return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 400 });
+    }
+
+    // Parse JSON body with explicit error handling to avoid Next returning HTML error pages
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('Failed to parse JSON body for login:', parseError);
+      const text = await request.text().catch(() => '');
+      console.error('Raw request body (truncated):', (text || '').slice(0, 200));
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    console.log('Request body:', {
       username: body.username,
       role: body.role,
       hasPassword: !!body.password
     })
-    
+
     const { username, password, role } = body
     
     if (!username || !password || !role) {
@@ -34,18 +85,32 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    
-    // Map frontend role ke database role
-    const roleMap: Record<string, user_role> = {
-      'admin': 'ADMIN' as user_role,
-      'staff': 'STAFF' as user_role,
-      'teknisi': 'TECHNICIAN' as user_role,
-      'supervisor': 'SUPERVISOR' as user_role
+
+    // Map frontend role ke database role (use type-safe mapping)
+    const roleMap: Record<string, UserRole> = {
+      'admin': 'ADMIN',
+      'staff': 'STAFF',
+      'teknisi': 'TECHNICIAN', // pastikan ini sesuai dengan enum di schema
+      'supervisor': 'SUPERVISOR'
     };
+    console.log('Role mapping debug:', {
+      allRoles: Object.entries(roleMap),
+      receivedRole: role,
+      mappedRole: roleMap[role],
+      frontendRoles: Object.keys(roleMap),
+      availableDbRoles: Object.values(roleMap)
+    });
+
+    // Tambah logging untuk debug
+    console.log('Role validation:', {
+      receivedRole: role,
+      dbRole: roleMap[role],
+      validRoles: Object.keys(roleMap)
+    });
 
     console.log('Received role from frontend:', role);
 
-    const dbRole = roleMap[role];
+    const dbRole = roleMap[role] as UserRole | undefined;
     console.log('Mapped role:', { 
       received: role,
       mapped: dbRole,
@@ -69,18 +134,69 @@ export async function POST(request: Request) {
     })
 
     // Cari user dengan username dan role
-    const userByUsername = await prisma.user.findFirst({
-      where: { 
+    type UserResult = {
+      id: string;
+      password: string;
+      role: UserRole;
+      username: string;
+    } | null;
+
+    // Test database connection first
+    try {
+      console.log('Attempting database connection...');
+      await prisma.$connect();
+      
+      // Test connection with a simple query
+      const testQuery = await prisma.systemUser.count();
+      console.log('Connection successful, user count:', testQuery);
+      
+    } catch (connError) {
+      console.error('Database connection failed:', {
+        error: connError instanceof Error ? {
+          name: connError.name,
+          message: connError.message,
+          stack: connError.stack
+        } : connError,
+        dbUrl: process.env.DATABASE_URL?.replace(/:.*@/, ':****@')
+      });
+      
+      return NextResponse.json(
+        { error: 'Database tidak dapat diakses. Pastikan MySQL server sudah berjalan.' },
+        { status: 503 }
+      );
+    }
+
+    // Race between timeout and database query
+      console.log('Executing user query with:', {
         username,
-        role: dbRole
-      },
-      select: {
-        id: true,
-        password: true,
-        role: true,
-        username: true,
-      },
-    });
+        role: dbRole,
+        query: 'findFirst on systemUser'
+      });
+
+      // Debug query
+      const allUsers = await prisma.systemUser.findMany({
+        select: {
+          username: true,
+          role: true
+        }
+      });
+      console.log('All users in database:', allUsers);
+
+      const userByUsername = await Promise.race([
+      timeoutPromise,
+      prisma.systemUser.findFirst({
+        where: { 
+          username,
+          role: dbRole
+        },
+        select: {
+          id: true,
+          password: true,
+          role: true,
+          username: true,
+        },
+      })
+    ]) as UserResult;
 
     console.log('Database query result:', {
       searchedUsername: username,
@@ -121,9 +237,28 @@ export async function POST(request: Request) {
       )
     }
 
+    // Defensive: ensure password is present in DB before calling bcrypt
+    if (!user.password) {
+      console.error('User has no password set in DB:', { id: user.id, username: user.username })
+      return NextResponse.json(
+        { error: 'Username atau password salah' },
+        { status: 401 }
+      )
+    }
+
     console.log('Verifying password...')
-    const passwordMatch = await compare(password, user.password)
-    
+    let passwordMatch = false
+    try {
+      passwordMatch = await compare(password, user.password)
+    } catch (err) {
+      // If bcrypt throws, log and return an auth error (avoid 500)
+      console.error('Error while comparing password hashes:', err)
+      return NextResponse.json(
+        { error: 'Username atau password salah' },
+        { status: 401 }
+      )
+    }
+
     console.log('Password verification result:', {
       isMatch: passwordMatch
     })
@@ -135,21 +270,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Map database role ke frontend role
-    const frontendRoleMap: { [key: string]: string } = {
-      'ADMIN': 'admin',
-      'STAFF': 'staff',
-      'TECHNICIAN': 'teknisi',
-      'SUPERVISOR': 'supervisor'
-    };
-
-    const frontendRole = frontendRoleMap[user.role];
+    // Convert database role ke frontend role menggunakan mapping yang sudah didefinisikan
+    const frontendRole = dbToFrontendRole[user.role];
 
     const response = NextResponse.json({
       id: user.id,
       username: user.username,
-      role: frontendRole,
-    })
+      role: frontendRole as FrontendRole,
+    } satisfies LoginResponse)
 
     // Set secure cookies untuk autentikasi
     response.cookies.set('auth_token', user.id, {
@@ -177,10 +305,43 @@ export async function POST(request: Request) {
     return response
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('Login error:', {
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : error,
+      context: {
+        requestBody: {
+          username: body?.username,
+          role: body?.role,
+          hasPassword: !!body?.password
+        },
+        prismaConnected: !!prisma?.$connect
+      }
+    });
+
+    // Handle specific errors
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        return NextResponse.json(
+          { error: 'Database timeout. Silakan coba lagi.' },
+          { status: 504 }
+        );
+      }
+      
+      if (error.message.includes('connect ECONNREFUSED') || 
+          error.message.includes('Can\'t reach database server')) {
+        return NextResponse.json(
+          { error: 'Database tidak dapat diakses. Silakan coba lagi nanti.' },
+          { status: 503 }
+        );
+      }
+    }
+
     return NextResponse.json(
       { error: 'Terjadi kesalahan pada server' },
       { status: 500 }
-    )
+    );
   }
 }
