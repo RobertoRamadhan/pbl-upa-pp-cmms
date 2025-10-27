@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: {
+    // Set the tracing root to the project root directory
+    fileTracingRoot: process.cwd(),
+  },
   async headers() {
     return [
       {

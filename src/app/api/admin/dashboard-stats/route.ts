@@ -15,15 +15,28 @@ export async function GET(request: NextRequest) {
 
     console.log('Auth check:', { userId, userRole });
 
-    if (!userId || userRole?.toUpperCase() !== 'ADMIN') {
+    if (!userId || !userRole) {
+      console.log('Missing auth headers:', { userId, userRole });
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - Missing auth headers' },
+        { status: 401 }
+      );
+    }
+
+    // Convert to uppercase for comparison
+    const normalizedRole = userRole.toUpperCase();
+    console.log('Auth check:', { userId, userRole, normalizedRole });
+
+    if (normalizedRole !== 'ADMIN') {
+      console.log('Invalid role:', { userRole, normalizedRole });
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid role' },
         { status: 401 }
       );
     }
 
     // Verify user exists and is active
-    const user = await prisma.user.findUnique({
+    const user = await prisma.systemUser.findUnique({
       where: {
         id: userId,
         isActive: true,
@@ -42,17 +55,24 @@ export async function GET(request: NextRequest) {
     // Get current statistics
     console.log('Fetching current ticket statistics...');
     
-    const ticketStats = await prisma.ticket.groupBy({
-      by: ['status'],
-      _count: {
-        status: true
-      },
-      where: {
-        NOT: {
-          status: 'CANCELLED'
+    // Get current statistics with error handling
+    let ticketStats;
+    try {
+      ticketStats = await prisma.ticket.groupBy({
+        by: ['status'],
+        _count: {
+          status: true
         }
-      }
-    });
+      });
+      
+      console.log('Raw ticket stats:', ticketStats);
+    } catch (error) {
+      console.error('Error fetching ticket stats:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch ticket statistics' },
+        { status: 500 }
+      );
+    }
 
     console.log('Ticket statistics:', ticketStats);
 
@@ -72,43 +92,49 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching recent assignments...');
     
-    // Fetch recent assignments with detailed information
-    const recentAssignments = await prisma.assignment.findMany({
-      where: {
-        NOT: {
-          status: 'REJECTED'
-        }
-      },
-      take: 5,
-      orderBy: {
-        assignedAt: 'desc'
-      },
-      include: {
-        ticket: {
-          select: {
-            subject: true,
-            status: true,
-            priority: true,
-            category: true,
-            location: true,
-            createdAt: true
-          }
+    // Fetch recent assignments with detailed information and error handling
+    let recentAssignments;
+    try {
+      recentAssignments = await prisma.assignment.findMany({
+        take: 5,
+        orderBy: {
+          assignedAt: 'desc'
         },
-        user_assignment_technicianIdTouser: {
-          select: {
-            name: true,
-            department: true,
-            technicianProfile: {
-              select: {
-                expertise: true,
-                area: true,
-                shift: true
+        include: {
+          ticket: {
+            select: {
+              subject: true,
+              status: true,
+              priority: true,
+              category: true,
+              location: true,
+              createdAt: true
+            }
+          },
+          user_assignment_technicianIdTouser: {
+            select: {
+              name: true,
+              department: true,
+              technicianProfile: {
+                select: {
+                  expertise: true,
+                  area: true,
+                  shift: true
+                }
               }
             }
           }
         }
-      }
-    });
+      });
+      
+      console.log('Recent assignments:', recentAssignments);
+    } catch (error) {
+      console.error('Error fetching recent assignments:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch recent assignments' },
+        { status: 500 }
+      );
+    }
 
     console.log('Recent assignments:', JSON.stringify(recentAssignments, null, 2));
 

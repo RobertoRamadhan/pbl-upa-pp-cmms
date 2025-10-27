@@ -128,17 +128,26 @@ export default function DashboardPage() {
   }, [router]);
 
   const fetchDashboardStats = async (userId: string, userRole: string) => {
-    console.log('Fetching dashboard stats...');
+    console.log('Fetching dashboard stats...', {
+      userId,
+      userRole,
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       setLoading(true);
       setError('');
+
+      // Log session info
+      const sessionStr = localStorage.getItem('user_session');
+      console.log('Current session:', sessionStr ? JSON.parse(sessionStr) : null);
 
       const response = await fetch('/api/admin/dashboard-stats', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': userId,
-          'x-user-role': userRole
+          'x-user-role': userRole.toUpperCase()
         },
         credentials: 'include'
       });

@@ -5,16 +5,14 @@ model notification {
   type      NotificationType
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-  user      user     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-enum NotificationType {
-  TICKET
-  ASSIGNMENT
-  REPAIR
-  SYSTEM
+model User {
+  id            String         @id @default(uuid())
+  notifications notification[]
 }
 
 model asset {

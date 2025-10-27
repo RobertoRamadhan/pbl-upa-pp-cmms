@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 
@@ -21,6 +21,7 @@ interface Credentials {
 
 export default function LoginPage() {
   const router = useRouter();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedRole, setSelectedRole] = useState<RoleType>('staff');
   const [credentials, setCredentials] = useState<Credentials>({
     username: '',
@@ -132,6 +133,18 @@ export default function LoginPage() {
         hasPassword: !!credentials.password
       });
 
+      // Set timeout untuk request
+      const controller = new AbortController();
+      timeoutRef.current = setTimeout(() => controller.abort(), 10000); // 10 detik timeout
+
+      console.log('Sending request:', {
+        url: '/api/auth/login',
+        method: 'POST',
+        username: credentials.username,
+        role: selectedRole,
+        hasPassword: !!credentials.password
+      });
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -142,48 +155,107 @@ export default function LoginPage() {
           password: credentials.password,
           role: selectedRole
         }),
+        signal: controller.signal
       });
 
       console.log('Server response status:', response.status);
 
-      // Read raw response text first (reading once) and attempt to parse JSON.
-      // This avoids "body stream already read" when response.json() fails and
-      // we try to read response.text() afterwards.
+      // Get response details first
+      const responseDetails = {
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type'),
+        url: response.url,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      };
+      console.log('Response details:', responseDetails);
+
+      // Read and log raw response
       const raw = await response.text();
+      console.log('Raw response text:', raw || '(empty response)');
+      
+      // Attempt to parse JSON
       let data: any = null;
       try {
         data = raw ? JSON.parse(raw) : null;
+        console.log('Parsed response:', {
+          hasData: !!data,
+          type: typeof data,
+          keys: data ? Object.keys(data) : [],
+          data: data
+        });
       } catch (parseErr) {
-        console.error('Failed to parse JSON response. Response text:', raw);
-        setError(
-          `Server returned unexpected response (status ${response.status}). See console for details.`
-        );
-        return;
+        console.error('JSON parse error:', {
+          error: parseErr instanceof Error ? parseErr.message : String(parseErr),
+          rawLength: raw?.length || 0,
+          rawPreview: raw?.substring(0, 100),
+          ...responseDetails
+        });
+        throw new Error(`Invalid JSON response: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`);
       }
       console.log('Server response data:', {
         success: response.ok,
         statusCode: response.status,
-        hasError: !!data.error,
-        hasId: !!data.id,
-        hasRole: !!data.role
+        hasError: !!data?.error,
+        hasId: !!data?.id,
+        hasRole: !!data?.role,
+        dataPresent: !!data,
+        dataType: data ? typeof data : 'null'
       });
 
       if (!response.ok) {
-        console.error('Login failed:', {
-          status: response.status,
-          error: data.error,
-          details: data.details
-        });
+        // Prepare detailed error information
+        const errorInfo = {
+          request: {
+            url: '/api/auth/login',
+            method: 'POST',
+            role: selectedRole,
+            username: credentials.username,
+          },
+          response: {
+            status: response.status,
+            statusText: response.statusText,
+            contentType: response.headers.get('content-type'),
+            ok: response.ok,
+            hasData: !!data,
+            error: data?.error,
+            details: data?.details,
+            rawData: data
+          }
+        };
         
-        // Handle validation errors
-        if (response.status === 400 && data.details) {
-          const errors = Object.values(data.details).filter(Boolean);
-          setError(errors.join(', '));
+        // Log comprehensive error information
+        console.error('Login failed:', JSON.stringify(errorInfo, null, 2));
+        
+        // Handle validation errors (400)
+        if (response.status === 400) {
+          if (data?.details) {
+            const errors = Object.values(data.details).filter(Boolean);
+            setError(errors.join(', '));
+          } else {
+            setError(data?.error || 'Data tidak valid');
+          }
           return;
         }
         
-        // Handle authentication errors
-        setError(data.error || 'Username atau password salah');
+        // Handle specific status codes
+        switch (response.status) {
+          case 401:
+            setError('Username atau password salah');
+            break;
+          case 403:
+            setError('Akses ditolak. Periksa kembali role yang dipilih.');
+            break;
+          case 404:
+            setError('API endpoint tidak ditemukan');
+            break;
+          case 500:
+            setError('Terjadi kesalahan pada server');
+            break;
+          default:
+            setError(data?.error || `Gagal login (${response.status}). Silakan coba lagi.`);
+        }
         return;
       }
 
@@ -201,17 +273,53 @@ export default function LoginPage() {
       await router.replace(dashboardPath);
       
     } catch (err) {
-      console.error('Login error:', err);
-      // Check if it's a network error
-      if (err instanceof Error) {
-        if ('TypeError: Failed to fetch' === err.toString()) {
-          setError('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
-        } else {
-          setError('Terjadi kesalahan saat login. Silakan coba lagi.');
+      // Log detailed error information
+      console.error('Login error:', {
+        error: err instanceof Error ? {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          type: err.constructor.name
+        } : String(err),
+        context: {
+          url: '/api/auth/login',
+          role: selectedRole,
+          username: credentials.username
         }
+      });
+
+      // Handle specific error types with user-friendly messages
+      if (err instanceof Error) {
+        switch (err.name) {
+          case 'AbortError':
+            setError('Request timeout. Server tidak merespons dalam waktu yang ditentukan.');
+            break;
+          case 'TypeError':
+            if (err.message.includes('Failed to fetch')) {
+              setError('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+            } else {
+              setError(`Error: ${err.message}`);
+            }
+            break;
+          default:
+            setError(`Terjadi kesalahan: ${err.message}`);
+        }
+      } else {
+        setError('Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.');
       }
+      
+      // Log additional debug information
+      console.debug('Login attempt failed', {
+        timestamp: new Date().toISOString(),
+        errorType: err?.constructor?.name,
+        hasErrorMessage: err instanceof Error
+      });
     } finally {
       setIsLoading(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     }
   };
 

@@ -7,7 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+}
+
+model SystemUser {
   id                                       String             @id
   username                                 String             @unique(map: "User_username_key")
   password                                 String
@@ -35,22 +42,22 @@ model Notification {
   type      NotificationType
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      SystemUser             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model MaintenanceHistory {
-  id          String            @id @default(uuid())
+  id          String          @id @default(uuid())
   assetId     String
   ticketId    String
   type        MaintenanceType
-  description String            @db.Text
-  cost        Decimal?          @db.Decimal(10,2)
+  description String          @db.Text
+  cost        Decimal?        @db.Decimal(10, 2)
   performedAt DateTime
-  createdAt   DateTime          @default(now())
-  asset       Asset             @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  ticket      Ticket            @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+  asset       Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  ticket      Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@index([assetId])
   @@index([ticketId])
@@ -67,8 +74,8 @@ model Assignment {
   endTime                            DateTime?
   assignedAt                         DateTime          @default(now())
   updatedAt                          DateTime          @updatedAt
-  user_assignment_assignedByIdTouser User              @relation("assignment_assignedByIdTouser", fields: [assignedById], references: [id], map: "Assignment_assignedById_fkey")
-  user_assignment_technicianIdTouser User              @relation("assignment_technicianIdTouser", fields: [technicianId], references: [id], map: "Assignment_technicianId_fkey")
+  user_assignment_assignedByIdTouser SystemUser              @relation("assignment_assignedByIdTouser", fields: [assignedById], references: [id], map: "Assignment_assignedById_fkey")
+  user_assignment_technicianIdTouser SystemUser              @relation("assignment_technicianIdTouser", fields: [technicianId], references: [id], map: "Assignment_technicianId_fkey")
   ticket                             Ticket            @relation(fields: [ticketId], references: [id], map: "Assignment_ticketId_fkey")
   materials                          Material[]
   repairLogs                         RepairLog[]
@@ -78,19 +85,19 @@ model Assignment {
 }
 
 model Asset {
-  id                String              @id @default(uuid())
-  code             String              @unique
-  name             String
-  category         String
-  location         String
-  status           AssetStatus         @default(ACTIVE)
-  purchaseDate     DateTime?
-  lastMaintenance  DateTime?
-  nextMaintenance  DateTime?
-  qrCode          String?             @db.Text
-  specifications   Json?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id                 String               @id @default(uuid())
+  code               String               @unique
+  name               String
+  category           String
+  location           String
+  status             asset_status          @default(ACTIVE)
+  purchaseDate       DateTime?
+  lastMaintenance    DateTime?
+  nextMaintenance    DateTime?
+  qrCode             String?              @db.Text
+  specifications     Json?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
   maintenanceHistory MaintenanceHistory[]
 }
 
@@ -116,7 +123,7 @@ model RepairLog {
   attachments  String?
   createdAt    DateTime         @default(now())
   assignment   Assignment       @relation(fields: [assignmentId], references: [id], map: "RepairLog_assignmentId_fkey")
-  user         User             @relation(fields: [technicianId], references: [id], map: "RepairLog_technicianId_fkey")
+  user         SystemUser             @relation(fields: [technicianId], references: [id], map: "RepairLog_technicianId_fkey")
 
   @@index([assignmentId], map: "RepairLog_assignmentId_fkey")
   @@index([technicianId], map: "RepairLog_technicianId_fkey")
@@ -130,25 +137,25 @@ model TechnicianProfile {
   shift      String
   rating     Float  @default(0)
   totalTasks Int    @default(0)
-  user       User   @relation(fields: [userId], references: [id], map: "TechnicianProfile_userId_fkey")
+  user       SystemUser   @relation(fields: [userId], references: [id], map: "TechnicianProfile_userId_fkey")
 }
 
 model Ticket {
-  id                String              @id
-  ticketNumber      String              @unique(map: "Ticket_ticketNumber_key")
-  category          String
-  subject           String
-  description       String              @db.Text
-  location          String
-  priority          ticket_priority     @default(MEDIUM)
-  status            ticket_status       @default(PENDING)
-  reporterId        String
-  attachments       String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime
-  completedAt       DateTime?
-  assignment        Assignment?
-  user              User                @relation(fields: [reporterId], references: [id], map: "Ticket_reporterId_fkey")
+  id                 String               @id
+  ticketNumber       String               @unique(map: "Ticket_ticketNumber_key")
+  category           String
+  subject            String
+  description        String               @db.Text
+  location           String
+  priority           ticket_priority      @default(MEDIUM)
+  status             ticket_status        @default(PENDING)
+  reporterId         String
+  attachments        String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  completedAt        DateTime?
+  assignment         Assignment?
+  user               SystemUser                 @relation(fields: [reporterId], references: [id], map: "Ticket_reporterId_fkey")
   maintenanceHistory MaintenanceHistory[]
 
   @@index([reporterId], map: "Ticket_reporterId_fkey")
@@ -161,14 +168,7 @@ enum user_role {
   SUPERVISOR
 }
 
-enum NotificationType {
-  TICKET
-  ASSIGNMENT
-  REPAIR
-  SYSTEM
-}
-
-enum AssetStatus {
+enum asset_status {
   ACTIVE
   MAINTENANCE
   RETIRED
@@ -195,15 +195,15 @@ enum ticket_priority {
   URGENT
 }
 
-enum MaintenanceType {
-  PREVENTIVE
-  CORRECTIVE
-}
-
 enum ticket_status {
   PENDING
   ASSIGNED
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
 }
