@@ -38,7 +38,7 @@ export default function SupervisorLayout({
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
       <nav className="w-64 bg-blue-800 text-white fixed inset-y-0 left-0 z-50 flex flex-col">
         {/* Logo */}

@@ -5,7 +5,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts';
-import Link from 'next/link';
 
 interface DashboardStats {
   totalTickets: number;
@@ -37,15 +36,22 @@ export default function SupervisorDashboard() {
     const fetchDashboardData = async () => {
       try {
         const response = await fetch('/api/supervisor/dashboard');
-        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
 
-        if (!response.ok) throw new Error(data.error || 'Failed to fetch dashboard data');
+        const data = await response.json();
+        
+        if (!data.stats || !data.technicians) {
+          throw new Error('Invalid dashboard data format');
+        }
 
         setStats(data.stats);
         setTechnicians(data.technicians);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Error fetching dashboard data:', error instanceof Error ? error.message : 'Unknown error');
 
         // Data fallback (dummy)
         setStats({
@@ -72,14 +78,14 @@ export default function SupervisorDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-[calc(100vh-2rem)]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 min-h-[calc(100vh-2rem)] pb-8">
       {/* ===== Dashboard Stats ===== */}
       <h1 className="text-2xl font-bold text-gray-900">Dashboard Supervisor</h1>
 

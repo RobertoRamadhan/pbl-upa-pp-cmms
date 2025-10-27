@@ -23,8 +23,11 @@ export async function GET() {
     // Calculate average completion time (in hours)
     const completedAssignments = await prisma.assignment.findMany({
       where: {
-  status: 'COMPLETED',
+        status: 'COMPLETED',
         endTime: {
+          not: null
+        },
+        startTime: {
           not: null
         }
       },
@@ -35,9 +38,11 @@ export async function GET() {
     })
 
     let totalHours = 0
-  completedAssignments.forEach((assignment: any) => {
+    completedAssignments.forEach((assignment) => {
+      // Pastikan startTime dan endTime ada
       if (assignment.startTime && assignment.endTime) {
-        const hours = Math.abs(assignment.endTime.getTime() - assignment.startTime.getTime()) / 36e5
+        const diffInMilliseconds = new Date(assignment.endTime).getTime() - new Date(assignment.startTime).getTime()
+        const hours = diffInMilliseconds / (1000 * 60 * 60) // Convert to hours
         totalHours += hours
       }
     })
@@ -46,7 +51,7 @@ export async function GET() {
       : 0
 
     // Fetch technician performance data
-    const technicians = await prisma.user.findMany({
+    const technicians = await prisma.systemUser.findMany({
       where: {
         role: 'TECHNICIAN'
       },
@@ -55,18 +60,30 @@ export async function GET() {
           where: {
             status: 'COMPLETED'
           }
-        }
+        },
+        technicianProfile: true
       }
     })
 
-    const technicianPerformance = technicians.map((tech: any) => {
+    const technicianPerformance = technicians.map((tech: {
+      id: string;
+      name: string;
+      rating?: number | null;
+      assignment_assignment_technicianIdTouser: {
+        startTime: Date | null;
+        endTime: Date | null;
+      }[];
+    }) => {
       const assignments = tech.assignment_assignment_technicianIdTouser
       const tasksCompleted = assignments.length
       
       // Calculate on-time percentage (assuming target time is 48 hours)
-  const onTimeAssignments = assignments.filter((assignment: any) => {
+      const onTimeAssignments = assignments.filter((assignment) => {
         if (assignment.startTime && assignment.endTime) {
-          const hours = Math.abs(assignment.endTime.getTime() - assignment.startTime.getTime()) / 36e5
+          const startTime = new Date(assignment.startTime)
+          const endTime = new Date(assignment.endTime)
+          const diffInMilliseconds = endTime.getTime() - startTime.getTime()
+          const hours = diffInMilliseconds / (1000 * 60 * 60) // Convert to hours
           return hours <= 48
         }
         return false
@@ -76,11 +93,15 @@ export async function GET() {
         ? (onTimeAssignments.length / tasksCompleted) * 100 
         : 0
 
+      // Get average rating if available
+      const rating = tech.rating || null
+
       return {
         id: tech.id,
-        name: tech.name || 'Unknown',
+        name: tech.name,
         tasksCompleted,
-        onTimePercentage: parseFloat(onTimePercentage.toFixed(1))
+        onTimePercentage: parseFloat(onTimePercentage.toFixed(1)),
+        rating
       }
     })
 
