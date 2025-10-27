@@ -1,85 +1,70 @@
-"use client";
-import Link from "next/link";
-import { useState, useEffect } from "react";
+"use client"
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [isMenuOpen, setIsMenuOpen] = useState(false) 
+  const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
     setIsLoaded(true)
     
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({
         x: (e.clientX / window.innerWidth) * 100,
         y: (e.clientY / window.innerHeight) * 100,
       })
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
-    return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [])
+     const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20) // ubah nilai 20 kalau mau blur muncul lebih cepat
+    }
+
+      window.addEventListener('mousemove', handleMouseMove)
+        window.addEventListener('scroll', handleScroll)
+        return () => {
+          window.removeEventListener('mousemove', handleMouseMove)
+          window.removeEventListener('scroll', handleScroll)
+        }
+      }, [])
 
   const features = [
     {
       title: "Manajemen Tugas",
-      description:
-        "Pengelolaan dan pelacakan tugas pemeliharaan dengan mudah dan terorganisir.",
+      description: "Pengelolaan dan pelacakan tugas pemeliharaan dengan mudah dan terorganisir.",
       icon: "📋",
-      gradient: "from-blue-500 to-cyan-500",
+      gradient: "from-blue-500 to-cyan-500"
     },
     {
       title: "Laporan Real-time",
-      description:
-        "Pemantauan status pekerjaan dan laporan pemeliharaan secara real-time.",
+      description: "Pemantauan status pekerjaan dan laporan pemeliharaan secara real-time.",
       icon: "📊",
-      gradient: "from-purple-500 to-pink-500",
+      gradient: "from-purple-500 to-pink-500"
     },
     {
       title: "Efisiensi Kerja",
-      description:
-        "Optimalkan alur kerja dan tingkatkan efisiensi pemeliharaan fasilitas.",
+      description: "Optimalkan alur kerja dan tingkatkan efisiensi pemeliharaan fasilitas.",
       icon: "⚡",
-      gradient: "from-orange-500 to-red-500",
-    },
-  ];
+      gradient: "from-orange-500 to-red-500"
+    }
+  ]
 
    return (
       <main className="relative min-h-screen w-full overflow-x-hidden overflow-y-hidden">
       {/* Background */}
       <div className="absolute inset-0 z-0">
-        {/* Primary Background Image */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transform transition-transform duration-1000 ease-out"
           style={{
             backgroundImage: 'url("/bg.js.jpeg")',
-            transform: `translate(${mousePosition.x * -0.02}px, ${
-              mousePosition.y * -0.02
-            }px) scale(1.1)`,
+            transform: `translate(${mousePosition.x * -0.02}px, ${mousePosition.y * -0.02}px) scale(1.1)`
           }}
         />
-        
         {/* Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-blue-900/40 to-purple-900/60" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-        
-        {/* Animated Particles - Only render on client */}
-        {isLoaded && (
-          <div className="absolute inset-0">
-            {[...Array(50)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-1 h-1 bg-white rounded-full opacity-20 animate-pulse"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 3}s`,
-                  animationDuration: `${2 + Math.random() * 3}s`
-                }}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Navbar */}
@@ -136,7 +121,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative z-10 container mx-auto px-4 pt-12 pb-24">
+      <div className="relative z-10 container mx-auto px-4 pt-28 pb-24">
         <div className={`text-center transition-all duration-1000 ${isLoaded ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-10'}`}>
           {/* Main Title with Enhanced Styling */}
           <div className="mb-6">
@@ -154,14 +139,9 @@ export default function Home() {
 
           {/* Enhanced Description */}
           <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
-            Sistem Manajemen Pemeliharaan Komputerisasi untuk pengelolaan dan
-            pemeliharaan
-            <span className="text-blue-300 font-medium">
-              {" "}
-              fasilitas kampus
-            </span>{" "}
-            yang lebih
-            <span className="text-purple-300 font-medium"> efisien</span> dan
+            Sistem Manajemen Pemeliharaan Komputerisasi untuk pengelolaan dan pemeliharaan 
+            <span className="text-blue-300 font-medium"> fasilitas kampus</span> yang lebih 
+            <span className="text-purple-300 font-medium"> efisien</span> dan 
             <span className="text-cyan-300 font-medium"> terorganisir</span>.
           </p>
 
@@ -175,18 +155,8 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
               <span className="relative flex items-center space-x-3">
                 <span>Masuk</span>
-                <svg
-                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
+                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </span>
             </Link>
@@ -194,14 +164,7 @@ export default function Home() {
         </div>
 
         {/* Enhanced Feature Cards */}
-        <div
-          id="features"
-          className={`grid grid-cols-1 md:grid-cols-3 gap-8 transition-all duration-1000 delay-500 ${
-            isLoaded
-              ? "opacity-100 transform translate-y-0"
-              : "opacity-0 transform translate-y-10"
-          }`}
-        >
+        <div id="features" className={`grid grid-cols-1 md:grid-cols-3 gap-8 transition-all duration-1000 delay-500 ${isLoaded ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-10'}`}>
           {features.map((feature, index) => (
             <div
               key={index}
@@ -209,15 +172,13 @@ export default function Home() {
               style={{ animationDelay: `${index * 0.2}s` }}
             >
               {/* Card Glow Effect */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 rounded-3xl transition-opacity duration-500`}
-              />
-
+              <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 rounded-3xl transition-opacity duration-500`} />
+              
               {/* Icon */}
               <div className="text-6xl mb-6 transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
                 {feature.icon}
               </div>
-
+              
               {/* Content */}
               <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-300 group-hover:to-purple-300 group-hover:bg-clip-text transition-all duration-300">
                 {feature.title}
@@ -225,21 +186,11 @@ export default function Home() {
               <p className="text-gray-300 leading-relaxed group-hover:text-gray-200 transition-colors duration-300">
                 {feature.description}
               </p>
-
+              
               {/* Hover Arrow */}
               <div className="absolute bottom-6 right-6 transform translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
-                <svg
-                  className="w-6 h-6 text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
+                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </div>
             </div>
@@ -247,18 +198,12 @@ export default function Home() {
         </div>
 
         {/* Stats Section */}
-        <div
-          className={`mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 transition-all duration-1000 delay-1000 ${
-            isLoaded
-              ? "opacity-100 transform translate-y-0"
-              : "opacity-0 transform translate-y-10"
-          }`}
-        >
+        <div className={`mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 transition-all duration-1000 delay-1000 ${isLoaded ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-10'}`}>
           {[
-            { number: "99%", label: "Uptime" },
-            { number: "500+", label: "Tasks Completed" },
-            { number: "24/7", label: "Support" },
-            { number: "100+", label: "Facilities" },
+            { number: '99%', label: 'Uptime' },
+            { number: '500+', label: 'Tasks Completed' },
+            { number: '24/7', label: 'Support' },
+            { number: '100+', label: 'Facilities' }
           ].map((stat, index) => (
             <div key={index} className="text-center group">
               <div className="text-3xl md:text-4xl font-black text-white mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 group-hover:bg-clip-text transition-all duration-300">
@@ -345,5 +290,5 @@ export default function Home() {
       </footer>
 
     </main>
-  );
+  )
 }

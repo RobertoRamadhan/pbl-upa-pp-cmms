@@ -188,12 +188,13 @@ export default function RepairPage() {
                   </td>
                   <td className="px-4 sm:px-6 py-2 whitespace-nowrap">{formatDate(repair.submitDate)}</td>
                   <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
-                    <button
-                      onClick={() => handleRepairClick(repair)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Detail
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRepairClick(repair)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Detail
+                  </button>
                   </td>
                 </tr>
               ))}

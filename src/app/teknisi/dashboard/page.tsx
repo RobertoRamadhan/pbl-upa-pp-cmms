@@ -10,11 +10,7 @@ import {
   Legend
 } from 'chart.js';
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend
-);
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface AssignmentData {
   status: string;
@@ -44,130 +40,82 @@ export default function TeknisiDashboard() {
     labels: ['Tepat Waktu', 'Terlambat'],
     datasets: [{
       data: [0, 0],
-      backgroundColor: [
-        'rgb(34, 197, 94)',  // Hijau
-        'rgb(239, 68, 68)',  // Merah
-      ],
+      backgroundColor: ['rgb(34, 197, 94)', 'rgb(239, 68, 68)'],
       borderWidth: 0,
     }],
   });
 
   const fetchStats = async (technicianId: string) => {
     try {
-      const response = await fetch(`/api/assignments?technicianId=${technicianId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      });
-
+      const response = await fetch(`/api/assignments?technicianId=${technicianId}`, { cache: 'no-store' });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`fetchStats failed with status ${response.status}`);
+        setStats({ menunggu: 0, dikerjakan: 0, selesai: 0 });
+        return;
       }
 
       const data = await response.json();
-
-      if (!Array.isArray(data)) {
-        throw new Error('Data is not an array');
-      }
+      if (!Array.isArray(data)) throw new Error('Data is not an array');
 
       setStats({
         menunggu: data.filter((a: AssignmentData) => a.status === 'PENDING').length,
         dikerjakan: data.filter((a: AssignmentData) => a.status === 'IN_PROGRESS').length,
         selesai: data.filter((a: AssignmentData) => a.status === 'COMPLETED').length,
       });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      setStats({
-        menunggu: 0,
-        dikerjakan: 0,
-        selesai: 0,
-      });
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      setStats({ menunggu: 0, dikerjakan: 0, selesai: 0 });
     }
   };
 
   const fetchPerformance = async (technicianId: string) => {
     try {
-      const response = await fetch(`/api/assignments/performance?technicianId=${technicianId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      });
-
+      const response = await fetch(`/api/assignments/performance?technicianId=${technicianId}`, { cache: 'no-store' });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`fetchPerformance failed with status ${response.status}`);
+        return;
       }
 
       const data: PerformanceData = await response.json();
-      
+      if (!data || typeof data.onTime !== 'number' || typeof data.late !== 'number') {
+        console.warn('Invalid performance data, using defaults');
+        return;
+      }
+
       setPerformaData(prev => ({
         ...prev,
-        datasets: [{
-          ...prev.datasets[0],
-          data: [data.onTime, data.late]
-        }]
+        datasets: [{ ...prev.datasets[0], data: [data.onTime, data.late] }]
       }));
-    } catch (error) {
-      console.error('Error fetching performance data:', error);
+    } catch (err) {
+      console.error('Error fetching performance data:', err);
     }
   };
 
   useEffect(() => {
     const checkAuthAndFetchData = async () => {
-      console.log('Starting auth check...');
-      
-      // Don't run on server side
-      if (typeof window === 'undefined') {
-        console.log('Server side rendering, skipping auth check');
-        return;
-      }
+      if (typeof window === 'undefined') return;
 
-      // Get session from localStorage
       const userSessionStr = localStorage.getItem('user_session');
-      console.log('Session string:', userSessionStr ? 'Found' : 'Not found');
-      
-      if (!userSessionStr) {
-        console.log('No session found, redirecting to login');
-        router.push('/login');
-        return;
-      }
+      if (!userSessionStr) return router.push('/login');
 
       try {
-        // Parse and validate session
         const userSession = JSON.parse(userSessionStr) as UserSession;
-        console.log('Session parsed:', {
-          hasId: !!userSession?.id,
-          role: userSession?.role || 'none'
-        });
-
         if (!userSession?.id || userSession.role !== 'teknisi') {
-          console.log('Invalid session (wrong role or no ID), clearing and redirecting');
           localStorage.removeItem('user_session');
-          router.replace('/login');
-          return;
+          return router.replace('/login');
         }
 
-        console.log('Valid technician session, fetching data...');
-        // Fetch data only if we have valid session
-        await Promise.all([
-          fetchStats(userSession.id),
-          fetchPerformance(userSession.id)
-        ]);
-        
-        console.log('Data fetch completed');
-      } catch (error) {
-        console.error('Session error:', error);
+        // Fetch stats and performance
+        await Promise.all([fetchStats(userSession.id), fetchPerformance(userSession.id)]);
+      } catch (err) {
+        console.error('Session error:', err);
         localStorage.removeItem('user_session');
         window.location.replace('/login');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    // Run immediately
     checkAuthAndFetchData();
   }, []);
 
@@ -181,7 +129,7 @@ export default function TeknisiDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Quick Stats - Mobile Friendly Cards */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-2 p-4">
         <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-orange-500">
           <p className="text-xs text-black">Menunggu</p>
@@ -197,42 +145,32 @@ export default function TeknisiDashboard() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {/* Tabs */}
       <div className="flex border-b bg-white">
         <button
-          className={`flex-1 py-3 text-sm font-medium ${
-            activeTab === 'tugas'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-black'
-          }`}
+          className={`flex-1 py-3 text-sm font-medium ${activeTab === 'tugas' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-black'}`}
           onClick={() => setActiveTab('tugas')}
         >
           Daftar Tugas
         </button>
         <button
-          className={`flex-1 py-3 text-sm font-medium ${
-            activeTab === 'performa'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-black'
-          }`}
+          className={`flex-1 py-3 text-sm font-medium ${activeTab === 'performa' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-black'}`}
           onClick={() => setActiveTab('performa')}
         >
           Performa
         </button>
       </div>
 
-      {/* Content Area */}
+      {/* Content */}
       <div className="p-4">
         {activeTab === 'tugas' ? (
           <div className="space-y-4">
-            {/* Tugas content will be added here */}
+            <p className="text-sm text-gray-500"> </p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-4">
-              <h3 className="text-sm font-medium text-black mb-4">
-                Performa Penyelesaian
-              </h3>
+              <h3 className="text-sm font-medium text-black mb-4">Performa Penyelesaian</h3>
               <div className="w-48 h-48 mx-auto">
                 <Doughnut data={performaData} />
               </div>
