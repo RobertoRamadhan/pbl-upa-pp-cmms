@@ -1,6 +1,7 @@
-import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
-import { repairlog_status } from '@prisma/client'
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { repairlog_status } from "@prisma/client";
+import { randomUUID } from "crypto";
 
 interface RepairLog {
   id: string;
@@ -27,70 +28,70 @@ interface RepairLog {
 // GET - Fetch repair logs
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const assignmentId = searchParams.get('assignmentId')
-    const start = searchParams.get('start')
-    const end = searchParams.get('end')
+    const { searchParams } = new URL(request.url);
+    const assignmentId = searchParams.get("assignmentId");
+    const start = searchParams.get("start");
+    const end = searchParams.get("end");
 
-    let dateFilter = {}
+    let dateFilter = {};
     if (start && end) {
-      const startDate = new Date(start)
-      const endDate = new Date(end)
-      endDate.setHours(23, 59, 59, 999)
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      endDate.setHours(23, 59, 59, 999);
       dateFilter = {
         createdAt: {
           gte: startDate,
-          lte: endDate
-        }
-      }
+          lte: endDate,
+        },
+      };
     }
 
-    const repairLogs = await prisma.repairlog.findMany({
+    const repairLogs = await prisma.repairLog.findMany({
       where: {
         ...(assignmentId && { assignmentId }),
-        ...dateFilter
+        ...dateFilter,
       },
       include: {
         user: true,
         assignment: {
           include: {
-            ticket: true
-          }
-        }
+            ticket: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
-    })
+    });
 
     // Transform data for frontend
-    const formattedLogs = repairLogs.map(log => ({
+    const formattedLogs = repairLogs.map((log: any) => ({
       id: log.id,
-      ticketId: log.assignment?.ticket?.id || '',
-      technicianName: log.user?.name || 'Unknown',
+      ticketId: log.assignment?.ticket?.id || "",
+      technicianName: log.user?.name || "Unknown",
       status: log.status,
       description: log.description,
       timeSpent: log.timeSpent,
       startTime: log.assignment?.startTime || null,
       endTime: log.assignment?.endTime || null,
-      ticketTitle: log.assignment?.ticket?.description || '',
-      action: log.action
-    }))
+      ticketTitle: log.assignment?.ticket?.name || "",
+      action: log.action,
+    }));
 
-    return NextResponse.json(formattedLogs)
+    return NextResponse.json(formattedLogs);
   } catch (error) {
-    console.error('Error fetching repair logs:', error)
+    console.error("Error fetching repair logs:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch repair logs' },
+      { error: "Failed to fetch repair logs" },
       { status: 500 }
-    )
+    );
   }
 }
 
 // POST - Create new repair log
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json();
     const {
       assignmentId,
       technicianId,
@@ -99,16 +100,16 @@ export async function POST(request: Request) {
       status,
       timeSpent,
       attachments,
-    } = body
+    } = body;
 
-    const repairLog = await prisma.repairlog.create({
+    const repairLog = await prisma.repairLog.create({
       data: {
-        id: '', // Will be auto-generated
+        id: randomUUID(),
         assignment: {
-          connect: { id: assignmentId }
+          connect: { id: assignmentId },
         },
         user: {
-          connect: { id: technicianId }
+          connect: { id: technicianId },
         },
         description,
         action,
@@ -120,45 +121,45 @@ export async function POST(request: Request) {
         user: true,
         assignment: {
           include: {
-            ticket: true
-          }
-        }
+            ticket: true,
+          },
+        },
       },
-    })
+    });
 
     // Update assignment status if repair is completed
-    if (status === 'COMPLETED') {
+    if (status === "COMPLETED") {
       await prisma.assignment.update({
         where: { id: assignmentId },
-        data: { 
-          status: 'COMPLETED',
+        data: {
+          status: "COMPLETED",
           endTime: new Date(),
         },
-      })
+      });
 
       // Update ticket status
       const assignment = await prisma.assignment.findUnique({
         where: { id: assignmentId },
         select: { ticketId: true },
-      })
+      });
 
       if (assignment) {
         await prisma.ticket.update({
           where: { id: assignment.ticketId },
-          data: { 
-            status: 'COMPLETED',
+          data: {
+            status: "COMPLETED",
             completedAt: new Date(),
           },
-        })
+        });
       }
     }
 
-    return NextResponse.json(repairLog)
+    return NextResponse.json(repairLog);
   } catch (error) {
-    console.error('Error creating repair log:', error)
+    console.error("Error creating repair log:", error);
     return NextResponse.json(
-      { error: 'Failed to create repair log' },
+      { error: "Failed to create repair log" },
       { status: 500 }
-    )
+    );
   }
 }

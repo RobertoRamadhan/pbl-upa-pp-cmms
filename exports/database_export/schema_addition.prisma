@@ -1,0 +1,40 @@
+model notification {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String   @db.Text
+  type      NotificationType
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      user     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+enum NotificationType {
+  TICKET
+  ASSIGNMENT
+  REPAIR
+  SYSTEM
+}
+
+model asset {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  name            String
+  category        String
+  location        String
+  status          AssetStatus @default(ACTIVE)
+  purchaseDate    DateTime?
+  lastMaintenance DateTime?
+  nextMaintenance DateTime?
+  qrCode         String?    @db.Text
+  specifications Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+enum AssetStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}

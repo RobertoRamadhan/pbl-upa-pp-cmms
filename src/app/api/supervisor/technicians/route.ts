@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import type { NextRequest } from 'next/server';
-import { user_role } from '@prisma/client';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import type { NextRequest } from "next/server";
+import { user_role } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {
     const technicians = await prisma.user.findMany({
       where: {
-        role: user_role.TECHNICIAN,
+        role: "TECHNICIAN" as user_role,
         isActive: true
       },
       select: {
@@ -22,20 +22,20 @@ export async function GET(request: NextRequest) {
             area: true,
             shift: true,
             rating: true,
-            totalTasks: true
-          }
+            totalTasks: true,
+          },
         },
         assignment_assignment_technicianIdTouser: {
           where: {
             status: {
-              in: ["PENDING", "IN_PROGRESS"]
-            }
+              in: ["PENDING", "IN_PROGRESS"],
+            },
           },
           select: {
-            status: true
-          }
-        }
-      }
+            status: true,
+          },
+        },
+      },
     });
 
     // Transform the data to include availability status
@@ -45,19 +45,19 @@ export async function GET(request: NextRequest) {
       email: tech.email,
       phoneNumber: tech.phone,
       department: tech.department,
-      expertise: tech.technicianProfile?.expertise ?? null,
-      area: tech.technicianProfile?.area ?? null,
-      shift: tech.technicianProfile?.shift ?? null,
-      rating: tech.technicianProfile?.rating ?? 0,
-      totalTasks: tech.technicianProfile?.totalTasks ?? 0,
+      expertise: tech.technicianprofile?.expertise ?? null,
+      area: tech.technicianprofile?.area ?? null,
+      shift: tech.technicianprofile?.shift ?? null,
+      rating: tech.technicianprofile?.rating ?? 0,
+      totalTasks: tech.technicianprofile?.totalTasks ?? 0,
       status: tech.assignment_assignment_technicianIdTouser.length > 0 ? 'Busy' : 'Available' as const
     }));
 
     return NextResponse.json(techniciansWithStatus);
   } catch (error) {
-    console.error('Error fetching technicians:', error);
+    console.error("Error fetching technicians:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch technicians' },
+      { error: "Failed to fetch technicians" },
       { status: 500 }
     );
   }
@@ -66,19 +66,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    
+
     const technician = await prisma.user.create({
       data: {
         ...data,
-        role: 'TECHNICIAN'
+        role: "TECHNICIAN"
       }
     });
 
     return NextResponse.json(technician);
   } catch (error) {
-    console.error('Error creating technician:', error);
+    console.error("Error creating technician:", error);
     return NextResponse.json(
-      { error: 'Failed to create technician' },
+      { error: "Failed to create technician" },
       { status: 500 }
     );
   }

@@ -16,8 +16,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.9",
-    "@prisma/client": "^6.18.0",
+    "@prisma/client": "^6.16.2",
     "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/next-auth": "^3.13.0",

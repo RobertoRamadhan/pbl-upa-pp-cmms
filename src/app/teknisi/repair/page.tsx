@@ -14,32 +14,15 @@ export default function RepairPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch data dari Express.js backend
   const fetchRepairs = async () => {
     try {
-      console.log('Fetching repairs...');
-      const response = await fetch('/api/repairs', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store' // Disable caching
-      });
-
-      console.log('Response status:', response.status);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
+      const response = await fetch('/api/repairs', { method: 'GET', headers: { 'Content-Type': 'application/json' }, cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      console.log('Received data:', data);
       setRepairs(data);
-      setLoading(false);
     } catch (err) {
-      console.error('Error fetching repairs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load repair data');
+    } finally {
       setLoading(false);
     }
   };
@@ -75,28 +58,26 @@ export default function RepairPage() {
   const filteredRepairs = repairs.filter(repair => {
     const matchesStatus = statusFilter === 'all' || repair.status === statusFilter;
     const matchesSearch = repair.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         repair.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         repair.location.toLowerCase().includes(searchTerm.toLowerCase());
+                          repair.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          repair.location.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header Section */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-black">Daftar Permintaan Perbaikan</h1>
-        <p className="mt-2 text-sm text-black">
-          Kelola dan tangani permintaan perbaikan yang masuk
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 text-black">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-black">Daftar Permintaan Perbaikan</h1>
+          <p className="mt-1 text-sm sm:text-base text-black">Kelola dan tangani permintaan perbaikan yang masuk</p>
+        </div>
 
-      {/* Filters Section */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex items-center space-x-4">
+        {/* Filters */}
+        <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-black"
+            className="block w-full sm:w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 text-black"
           >
             <option value="all">Semua Status</option>
             <option value="pending">Menunggu</option>
@@ -104,55 +85,88 @@ export default function RepairPage() {
             <option value="completed">Selesai</option>
             <option value="need_parts">Butuh Sparepart</option>
           </select>
-        </div>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Cari berdasarkan subjek, deskripsi, atau lokasi..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 pl-10 text-black"
-          />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+          <div className="relative w-full">
+            <input
+              type="text"
+              placeholder="Cari subjek, deskripsi, lokasi..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 pl-8 text-black"
+            />
+            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+              <svg className="h-4 w-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Table Section */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="min-w-full divide-y divide-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
+        {/* Cards for mobile */}
+        <div className="grid grid-cols-1 gap-4 sm:hidden">
+          {filteredRepairs.length === 0 && (
+            <div className="text-center py-4 text-black">Tidak ada permintaan perbaikan yang sesuai dengan filter</div>
+          )}
+          {filteredRepairs.map((repair) => (
+            <div key={repair.id} className="bg-white shadow rounded-lg p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium text-black">{repair.subject}</div>
+                  <div className="text-sm text-gray-600">{repair.location}</div>
+                </div>
+                <button
+                  onClick={() => handleRepairClick(repair)}
+                  className="text-blue-600 hover:text-blue-900 font-semibold"
+                >
+                  Detail
+                </button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  repair.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  repair.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                  repair.status === 'completed' ? 'bg-green-100 text-green-800' :
+                  repair.status === 'need_parts' ? 'bg-orange-100 text-orange-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {repair.status.replace('_', ' ').toUpperCase()}
+                </span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  repair.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                  repair.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                  repair.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-green-100 text-green-800'
+                }`}>
+                  {repair.priority.toUpperCase()}
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs text-gray-700 bg-gray-100">
+                  {formatDate(repair.submitDate)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Table for desktop */}
+        <div className="hidden sm:block overflow-x-auto bg-white shadow-md rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                  Subjek/Lokasi
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                  Status
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                  Prioritas
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                  Tanggal Submit
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                  Aksi
-                </th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Subjek/Lokasi</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Status</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Prioritas</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Tanggal Submit</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRepairs.map((repair) => (
                 <tr key={repair.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-black">{repair.subject}</div>
-                    <div className="text-sm text-black">{repair.location}</div>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
+                    <div className="font-medium text-black">{repair.subject}</div>
+                    <div className="text-sm text-gray-600">{repair.location}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
                       repair.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                       repair.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
                       repair.status === 'completed' ? 'bg-green-100 text-green-800' :
@@ -162,8 +176,8 @@ export default function RepairPage() {
                       {repair.status.replace('_', ' ').toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
                       repair.priority === 'urgent' ? 'bg-red-100 text-red-800' :
                       repair.priority === 'high' ? 'bg-orange-100 text-orange-800' :
                       repair.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
@@ -172,60 +186,51 @@ export default function RepairPage() {
                       {repair.priority.toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                    {formatDate(repair.submitDate)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleRepairClick(repair)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Detail
-                    </button>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">{formatDate(repair.submitDate)}</td>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
+                  <button
+                    type="button"
+                    onClick={() => handleRepairClick(repair)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Detail
+                  </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {filteredRepairs.length === 0 && (
+            <div className="text-center py-4 text-black">
+              Tidak ada permintaan perbaikan yang sesuai dengan filter
+            </div>
+          )}
         </div>
-        {filteredRepairs.length === 0 && (
-          <div className="text-center py-8 text-black">
-            Tidak ada permintaan perbaikan yang sesuai dengan filter
-          </div>
+
+        {/* Modal */}
+        {showModal && selectedRepair && (
+          <RepairDetailModal
+            repair={selectedRepair}
+            onClose={() => { setShowModal(false); setSelectedRepair(null); }}
+            onStatusUpdate={async (status, note) => {
+              await fetch(`/api/repairs/${selectedRepair.id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, note }),
+              });
+              fetchRepairs();
+            }}
+            onAddNote={async (note) => {
+              await fetch(`/api/repairs/${selectedRepair.id}/notes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note }),
+              });
+              fetchRepairs();
+            }}
+          />
         )}
       </div>
-
-      {showModal && selectedRepair && (
-        <RepairDetailModal
-          repair={selectedRepair}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedRepair(null);
-          }}
-          onStatusUpdate={async (status, note) => {
-            // TODO: Implement status update logic
-            await fetch(`/api/repairs/${selectedRepair.id}/status`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ status, note }),
-            });
-            fetchRepairs();
-          }}
-          onAddNote={async (note) => {
-            // TODO: Implement add note logic
-            await fetch(`/api/repairs/${selectedRepair.id}/notes`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ note }),
-            });
-            fetchRepairs();
-          }}
-        />
-      )}
     </div>
   );
 }
