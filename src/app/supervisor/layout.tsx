@@ -1,14 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-
-interface MenuItem {
-  href: string;
-  label: string;
-  icon: string;
-}
 
 export default function SupervisorLayout({
   children,
@@ -16,20 +10,13 @@ export default function SupervisorLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  const supervisorMenuItems: MenuItem[] = [
-    { href: '/supervisor/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/supervisor/technicians', label: 'Teknisi', icon: '👨‍🔧' },
-    { href: '/supervisor/assignments', label: 'Penugasan', icon: '📋' },
-    { href: '/supervisor/reports', label: 'Laporan', icon: '📈' },
-  ];
 
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', {
-        method: 'POST',
+        method: 'POST'
       });
       router.push('/login');
     } catch (error) {
@@ -37,82 +24,147 @@ export default function SupervisorLayout({
     }
   };
 
+  const supervisorMenuItems = [
+    { 
+      href: '/supervisor/dashboard', 
+      label: 'Dashboard', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+      )
+    },
+    { 
+      href: '/supervisor/technicians', 
+      label: 'Teknisi', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      )
+    },
+    { 
+      href: '/supervisor/assignments', 
+      label: 'Penugasan', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        </svg>
+      )
+    },
+    { 
+      href: '/supervisor/reports', 
+      label: 'Laporan', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      )
+    }
+  ];
+
   return (
-    <div className="flex min-h-screen">
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <nav className="w-64 bg-blue-800 text-white fixed inset-y-0 left-0 z-50 flex flex-col">
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-blue-700">
-          <Link href="/supervisor/dashboard" className="text-xl font-bold">
-            CMMS Supervisor
-          </Link>
-        </div>
-
-        {/* Menu Items */}
-        <div className="py-4 flex-1 overflow-y-auto">
-          {supervisorMenuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center px-6 py-3 text-sm font-medium ${
-                pathname === item.href
-                  ? 'bg-blue-900 text-white'
-                  : 'text-blue-100 hover:bg-blue-700 hover:text-white'
-              }`}
+      <aside 
+        className={`fixed inset-y-0 left-0 z-40 w-[280px] lg:w-64 transition-transform duration-300 transform 
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+      >
+        <div className="h-full bg-gradient-to-b from-blue-600 to-blue-800 text-white shadow-xl flex flex-col">
+          {/* Logo */}
+          <div className="flex items-center justify-between px-6 py-5 border-b border-blue-500/30">
+            <span className="text-xl lg:text-2xl font-bold tracking-tight">Supervisor UPPA</span>
+            <button 
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-lg hover:bg-blue-700/50"
             >
-              <span className="mr-3">{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
-        </div>
-
-        {/* User Menu - Fixed at bottom */}
-        <div className="w-full border-t border-blue-700">
-          <div className="p-4 mt-auto">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center w-full px-2 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 hover:text-white rounded-lg"
-            >
-              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center mr-3">
-                👤
-              </div>
-              <span>Profile</span>
+              <span className="sr-only">Close sidebar</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
-            
-            {isDropdownOpen && (
-              <div className="mt-2 py-1 bg-blue-700 rounded-lg">
-                <Link
-                  href="/supervisor/profile"
-                  className="block px-4 py-2 text-sm text-blue-100 hover:bg-blue-600"
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {supervisorMenuItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsSidebarOpen(false)}
+                className={`flex items-center px-4 py-4 rounded-lg text-base font-medium transition-colors duration-200 ${
+                  pathname === item.href
+                    ? 'bg-white/10 text-white'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <span className="mr-4 flex-shrink-0">{item.icon}</span>
+                <span className="flex-1">{item.label}</span>
+                <svg 
+                  className="w-5 h-5 text-white/50" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
                 >
-                  Settings
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-sm text-blue-100 hover:bg-blue-600"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            ))}
+          </nav>
+
+          {/* Logout Section */}
+          <div className="border-t border-blue-500/30 mt-auto">
+            <div className="p-4">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center px-4 py-3 text-white/90 hover:bg-white/10 rounded-lg transition-colors duration-200"
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span className="font-medium">Log Out</span>
+              </button>
+            </div>
           </div>
         </div>
+      </aside>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-blue-700">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-white shadow-sm">
+        <div className="flex items-center justify-between px-4 py-4">
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200"
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 rounded-lg text-blue-600 hover:bg-blue-50"
           >
-            🚪 Logout
+            <span className="sr-only">Open sidebar</span>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
+          <span className="text-xl font-semibold text-blue-600">Supervisor UPPA</span>
+          <div className="w-8"></div> {/* Spacer for alignment */}
         </div>
-      </nav>
+      </div>
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 flex flex-col min-h-screen bg-gray-100">
-        <main className="flex-1 p-8">{children}</main>
-      </div>
+      <main className={`min-h-screen bg-gray-50 lg:ml-64 transition-all duration-300`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 lg:pt-8 pb-8">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }
