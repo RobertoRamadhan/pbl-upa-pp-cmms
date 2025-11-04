@@ -13,9 +13,16 @@ async function main() {
     
     // Clear existing data
     console.log('Clearing existing data...');
+    // Delete in correct order based on foreign key constraints
+    await prisma.notification.deleteMany();
+    await prisma.material.deleteMany();
+    await prisma.repairLog.deleteMany();
+    await prisma.maintenanceHistory.deleteMany();
+    await prisma.assignment.deleteMany();
     await prisma.ticket.deleteMany();
     await prisma.technicianProfile.deleteMany();
     await prisma.systemUser.deleteMany();
+    await prisma.asset.deleteMany();
     console.log('Existing data cleared');
     // Create admin user
     const adminPassword = await hash('admin123', 10);
