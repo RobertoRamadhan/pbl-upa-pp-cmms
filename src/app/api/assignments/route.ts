@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { assignment_status } from "@prisma/client";
 
 // GET - Fetch all assignments
 export async function GET(request: Request) {
@@ -8,18 +8,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const technicianId = searchParams.get("technicianId");
     const status = searchParams.get("status");
-
     const assignments = await prisma.assignment.findMany({
       where: {
         ...(technicianId && { technicianId }),
-        ...(status && { status: status as any }),
+        ...(status && { status: status as assignment_status }),
       },
       include: {
         ticket: true,
-        user_assignment_technicianIdTouser: {
+        technician: {
           select: {
             name: true,
-            technicianprofile: true,
+            technicianProfile: true,
           },
         },
         repairLogs: true,
@@ -55,7 +54,7 @@ export async function POST(request: Request) {
       },
       include: {
         ticket: true,
-        user_assignment_technicianIdTouser: {
+        technician: {
           select: {
             name: true,
           },
@@ -68,6 +67,15 @@ export async function POST(request: Request) {
       where: { id: ticketId },
       data: { status: 'ASSIGNED' },
     })
+
+    // Create notification for the technician
+    await prisma.notification.create({
+      data: {
+        userId: technicianId,
+        message: `You have been assigned a new ticket: ${assignment.ticket.subject}`,
+        type: 'INFO'  // Using valid NotificationType
+      }
+    });
 
     return NextResponse.json(assignment);
   } catch (error) {

@@ -1,29 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { repairlog_status } from "@prisma/client";
 import { randomUUID } from "crypto";
-
-interface RepairLog {
-  id: string;
-  assignmentId: string;
-  technicianId: string;
-  description: string;
-  action: string;
-  status: repairlog_status;
-  timeSpent: number;
-  attachments?: string | null;
-  technician: {
-    name: string | null;
-  };
-  assignment: {
-    startTime: Date | null;
-    endTime: Date | null;
-    ticket: {
-      id: string;
-      title: string;
-    };
-  };
-}
 
 // GET - Fetch repair logs
 export async function GET(request: Request) {
@@ -65,7 +42,20 @@ export async function GET(request: Request) {
     });
 
     // Transform data for frontend
-    const formattedLogs = repairLogs.map((log: any) => ({
+    type FormattedLog = {
+      id: string;
+      ticketId: string;
+      technicianName: string;
+      status: string;
+      description: string;
+      timeSpent: number;
+      startTime: Date | null;
+      endTime: Date | null;
+      ticketTitle: string;
+      action: string;
+    };
+
+    const formattedLogs: FormattedLog[] = repairLogs.map((log) => ({
       id: log.id,
       ticketId: log.assignment?.ticket?.id || "",
       technicianName: log.user?.name || "Unknown",
@@ -74,7 +64,7 @@ export async function GET(request: Request) {
       timeSpent: log.timeSpent,
       startTime: log.assignment?.startTime || null,
       endTime: log.assignment?.endTime || null,
-      ticketTitle: log.assignment?.ticket?.name || "",
+      ticketTitle: log.assignment?.ticket?.subject || "",
       action: log.action,
     }));
 
@@ -144,13 +134,27 @@ export async function POST(request: Request) {
       });
 
       if (assignment) {
-        await prisma.ticket.update({
+        const ticket = await prisma.ticket.update({
           where: { id: assignment.ticketId },
           data: {
             status: "COMPLETED",
             completedAt: new Date(),
           },
+          include: {
+            user: true // Include the user who created the ticket
+          }
         });
+
+        // Create notification for the ticket creator
+        if (ticket.user) {
+          await prisma.notification.create({
+            data: {
+              userId: ticket.user.id,
+              message: `Your ticket has been completed: ${ticket.subject}`,
+              type: 'SUCCESS'  // Using valid NotificationType
+            }
+          });
+        }
       }
     }
 

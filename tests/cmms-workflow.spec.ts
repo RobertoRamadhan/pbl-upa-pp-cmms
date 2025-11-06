@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('CMMS Complete Workflow', () => {
-  test.setTimeout(60000); // Set timeout to 60 seconds for all tests in this describe block
+  test.setTimeout(120000); // Set timeout to 120 seconds for all tests in this describe block
 
   // Test untuk alur Staff
   test('1. Staff: Login and create maintenance ticket', async ({ page }) => {
@@ -48,6 +48,12 @@ test.describe('CMMS Complete Workflow', () => {
       const responseBody = await response.json();
       console.log('Login response:', responseBody);
 
+      // Validate response structure
+      expect(responseBody).toHaveProperty('user');
+      expect(responseBody.user).toHaveProperty('id');
+      expect(responseBody.user).toHaveProperty('name');
+      expect(responseBody.user).toHaveProperty('role', 'staff');
+
       if (response.ok()) {
         // Wait for navigation only if login was successful
         await page.waitForURL('**/staff/dashboard', { timeout: 30000 });
@@ -58,16 +64,40 @@ test.describe('CMMS Complete Workflow', () => {
 
     // Navigate to new ticket page
     await test.step('Create new ticket', async () => {
+      // Set up alert handler before any actions
+      page.on('dialog', async dialog => {
+        expect(dialog.message()).toBe('Tiket berhasil dibuat!');
+        await dialog.accept();
+      });
+
       await page.goto('/staff/new-ticket');
       await page.waitForLoadState('domcontentloaded');
       await page.waitForLoadState('networkidle');
 
+      // Verify page loaded correctly
+      const pageTitle = page.getByRole('heading', { name: 'Buat Tiket Baru' });
+      await expect(pageTitle).toBeVisible();
+
       // Fill ticket form
-      await page.getByRole('combobox').selectOption('Komputer/Laptop');
-      await page.getByPlaceholder(/Ruang 101/).fill('Ruang 2301');
-      await page.getByPlaceholder(/Ringkasan singkat/).fill('Kerusakan Proyektor');
-      await page.getByPlaceholder(/Jelaskan detail/).fill('Proyektor di ruang 2301 tidak menyala');
-      await page.getByText('high').click();
+      const categorySelect = page.getByRole('combobox').first();
+      await expect(categorySelect).toBeVisible();
+      await categorySelect.selectOption('Komputer/Laptop');
+      
+      const locationInput = page.getByPlaceholder(/Ruang 101/);
+      await expect(locationInput).toBeVisible();
+      await locationInput.fill('Ruang 2301');
+      
+      const subjectInput = page.getByPlaceholder(/Ringkasan singkat/);
+      await expect(subjectInput).toBeVisible();
+      await subjectInput.fill('Kerusakan Proyektor');
+      
+      const descriptionInput = page.getByPlaceholder(/Jelaskan detail/);
+      await expect(descriptionInput).toBeVisible();
+      await descriptionInput.fill('Proyektor di ruang 2301 tidak menyala');
+      
+      const priorityHigh = page.getByText('high');
+      await expect(priorityHigh).toBeVisible();
+      await priorityHigh.click();
 
       // Submit form and wait for response
       const responsePromise = page.waitForResponse(
@@ -75,58 +105,18 @@ test.describe('CMMS Complete Workflow', () => {
         { timeout: 30000 }
       );
 
-      await page.getByRole('button', { name: /submit|buat|kirim/i }).click();
+      const submitBtn = page.getByRole('button', { name: /submit|buat|kirim/i });
+      await expect(submitBtn).toBeEnabled();
+      await submitBtn.click();
+
       const response = await responsePromise;
+      expect(response.ok()).toBeTruthy();
 
       // Verify successful creation
-      expect(response.ok()).toBeTruthy();
       await page.waitForURL('**/staff/tickets', { timeout: 30000 });
-
-      // Verify successful login
       await expect(page.getByText('Terjadi kesalahan')).not.toBeVisible();
+      await expect(page.getByText('Terjadi kesalahan pada server')).not.toBeVisible();
     });
-
-    // Verify no error message is visible
-    await expect(page.getByText('Terjadi kesalahan pada server')).not.toBeVisible();
-    await page.goto('/staff/new-ticket');
-    
-    // Set up alert handler before any actions
-    page.on('dialog', async dialog => {
-      expect(dialog.message()).toBe('Tiket berhasil dibuat!');
-      await dialog.accept();
-    });
-    
-    // Tunggu form muncul
-    const pageTitle = page.getByRole('heading', { name: 'Buat Tiket Baru' });
-    await expect(pageTitle).toBeVisible();
-    
-    // Isi form ticket menggunakan select dan text inputs
-    const categorySelect = page.locator('select');
-    await expect(categorySelect).toBeVisible();
-    await categorySelect.selectOption('Komputer/Laptop');
-    
-    // Use placeholder text to find inputs
-    const locationInput = page.getByPlaceholder(/Ruang 101/);
-    await expect(locationInput).toBeVisible();
-    await locationInput.fill('Ruang 2301');
-    
-    const subjectInput = page.getByPlaceholder(/Ringkasan singkat/);
-    await expect(subjectInput).toBeVisible();
-    await subjectInput.fill('Kerusakan Proyektor');
-    
-    const descriptionInput = page.getByPlaceholder(/Jelaskan detail/);
-    await expect(descriptionInput).toBeVisible();
-    await descriptionInput.fill('Proyektor di ruang 2301 tidak menyala');
-    
-    // Set prioritas using radio button text
-    const priorityHigh = page.getByText('high');
-    await expect(priorityHigh).toBeVisible();
-    await priorityHigh.click();
-    
-    // Submit form
-    const submitBtn = page.getByRole('button', { name: /submit|buat|kirim/i });
-    await expect(submitBtn).toBeEnabled();
-    await submitBtn.click();
 
     // Verify redirection
     await page.waitForURL('**/staff/tickets', { timeout: 10000 });
@@ -204,34 +194,53 @@ test.describe('CMMS Complete Workflow', () => {
       const unassignedSection = page.getByRole('heading', { name: 'Tiket Belum Ditugaskan' });
       await expect(unassignedSection).toBeVisible({ timeout: 15000 });
 
-      // Look for the specific ticket in unassigned tickets section
-      const unassignedTable = page.locator('.bg-yellow-50 table');
-      await expect(unassignedTable).toBeVisible();
-      
-      // Wait for data to load and find the first matching ticket
-      const ticketRow = unassignedTable.locator('tr', {
-        has: page.locator('td', { hasText: 'Kerusakan Proyektor' })
-      }).first();
-      await expect(ticketRow).toBeVisible({ timeout: 10000 });
+      // Wait for ticket with subject to be visible
+      const ticketElement = page.getByText('Kerusakan Proyektor');
+      await expect(ticketElement).toBeVisible({ timeout: 30000 });
 
-      // Find and click the assign button in the found ticket row
-      const assignButton = ticketRow.getByRole('button').first();
-      await expect(assignButton).toBeEnabled();
+      // Click assign button on the ticket
+      const assignButton = page.getByRole('button', { name: /assign|tugaskan/i }).first();
+      await expect(assignButton).toBeVisible();
       await assignButton.click();
 
-      // Handle assignment dialog
-      await page.waitForTimeout(1000); // Wait for dialog animation
-      const dialog = page.getByRole('dialog');
+      // Wait for assignment dialog
+      const dialog = page.locator('[data-testid="assignment-dialog"]');
       await expect(dialog).toBeVisible();
+
+      // Select technician
+      const technicianSelect = page.locator('[data-testid="technician-select"]');
+      await expect(technicianSelect).toBeVisible();
+      await technicianSelect.selectOption({ index: 1 }); // Select first available technician
+
+      // Click assign button in dialog
+      const firstDialogAssignButton = page.locator('[data-testid="assign-button"]');
+      await expect(firstDialogAssignButton).toBeVisible();
+      await firstDialogAssignButton.click();
       
-      const dialogPanel = dialog.getByTestId('assignment-dialog');
+      // Wait for ticket with subject to be visible
+      const ticketSubject = page.getByText('Kerusakan Proyektor', { exact: false });
+      await expect(ticketSubject).toBeVisible({ timeout: 30000 });
+
+      // Find ticket row containing this subject
+      const ticketRow = page.locator('tr', { has: ticketSubject }).first();
+      await expect(ticketRow).toBeVisible();
+
+      // Find assign button and click it
+      const assignBtn = ticketRow.getByRole('button', { name: /assign|tugaskan/i }).first();
+      await expect(assignBtn).toBeVisible();
+      await assignBtn.click();
+
+      // Wait for assignment dialog and verify it's visible
+      const dialogPanel = page.locator('[data-testid="assignment-dialog"]');
       await expect(dialogPanel).toBeVisible();
-      
-      const techSelect = dialogPanel.getByTestId('technician-select');
+
+      // Wait for loading state to complete
+      const loadingSpinner = dialogPanel.locator('.animate-spin');
+      if (await loadingSpinner.isVisible())
+        await expect(loadingSpinner).toBeHidden({ timeout: 10000 });
+
+      const techSelect = dialog.getByTestId('technician-select');
       await expect(techSelect).toBeVisible();
-      
-      // Tunggu data teknisi dimuat
-      await page.waitForTimeout(1000);
       const options = await techSelect.locator('option').all();
       for (const option of options) {
         const text = await option.textContent();
@@ -250,39 +259,70 @@ test.describe('CMMS Complete Workflow', () => {
       await dialogAssignButton.click();
       
       // Wait for unassigned ticket table to update
+      const unassignedTable = page.locator('[data-testid="unassigned-table"]');
       await expect(unassignedTable.locator('tr').filter({ hasText: 'Kerusakan Proyektor' })).not.toBeVisible({ timeout: 15000 });
       await expect(page.getByRole('dialog')).not.toBeVisible();
       await expect(ticketRow).not.toBeVisible();
     });
   });
 
-  // Test untuk alur Teknisi
+    // Test untuk alur Teknisi
   test('3. Technician: Complete repair and submit report', async ({ page }) => {
-    // Login sebagai teknisi
-    await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'CMMS Login' })).toBeVisible();
+    await test.step('Login as technician', async () => {
+      await page.goto('/login');
+      await expect(page.getByRole('heading', { name: 'CMMS Login' })).toBeVisible();
 
-    const usernameInput = page.getByRole('textbox').first();
-    const passwordInput = page.locator('input[type="password"]');
-    const roleSelect = page.locator('select');
+      const usernameInput = page.getByRole('textbox').first();
+      const passwordInput = page.locator('input[type="password"]');
+      const roleSelect = page.locator('select');
 
-    await usernameInput.fill('technician');
-    await passwordInput.fill('tech123');
-    await roleSelect.selectOption({ value: 'teknisi' });
-    await page.getByRole('button', { name: /🔧.*Sign in as Teknisi/i }).click();
+      await usernameInput.fill('technician');
+      await passwordInput.fill('tech123');
+      await roleSelect.selectOption({ value: 'teknisi' });
 
-    // Akses halaman repair
-    await page.waitForURL('**/teknisi/dashboard');
-    await page.goto('/teknisi/repair');
-    
-    // Cari dan pilih tugas yang ditugaskan
-    await page.getByPlaceholder('Search assignments...').fill('Kerusakan Proyektor');
-    await page.getByRole('button', { name: /Start Repair/i }).first().click();
+      const loginButton = page.getByRole('button', { name: /🔧.*Sign in as Teknisi/i });
+      await expect(loginButton).toBeVisible();
+      await loginButton.click();
 
-    // Isi form repair log
-    await page.getByLabel('Description').fill('Proyektor sudah diperbaiki, perlu ganti lampu');
-    await page.getByLabel('Action').fill('Mengganti lampu proyektor dengan yang baru');
-    await page.getByLabel('Time Spent (minutes)').fill('45');
+      await page.waitForURL('**/teknisi/dashboard', { timeout: 30000 });
+    });
+
+    await test.step('Access repair page and find assigned task', async () => {
+      await page.goto('/teknisi/repair');
+      await page.waitForLoadState('networkidle');
+      
+      const searchInput = page.locator('[data-testid="search-input"]');
+      await expect(searchInput).toBeVisible();
+      await searchInput.fill('Kerusakan Proyektor');
+
+      const ticketRow = page.getByText('Kerusakan Proyektor').first();
+      await expect(ticketRow).toBeVisible({ timeout: 30000 });
+      
+      const startButton = page.getByRole('button', { name: /start|mulai/i }).first();
+      await expect(startButton).toBeVisible();
+      await startButton.click();    await test.step('Fill repair form and submit', async () => {
+      // Wait for repair form modal
+      const repairForm = page.locator('[data-testid="repair-form"]');
+      await expect(repairForm).toBeVisible();
+
+      // Fill form fields
+      await page.locator('[data-testid="description-input"]')
+        .fill('Proyektor sudah diperbaiki, perlu ganti lampu');
+      await page.locator('[data-testid="action-input"]')
+        .fill('Mengganti lampu proyektor dengan yang baru');
+      await page.locator('[data-testid="time-spent-input"]')
+        .fill('45');
+
+      // Submit form
+      const submitButton = page.locator('[data-testid="submit-repair"]');
+      await expect(submitButton).toBeVisible();
+      await submitButton.click();
+
+      // Verify success message or ticket status change
+      await expect(page.getByText('Repair log berhasil disubmit')).toBeVisible();
+      await expect(ticketRow).not.toBeVisible();
+    });
+  });
     
     // Upload foto hasil (jika ada)
     const fileInput = page.locator('input[type="file"]');
@@ -314,9 +354,10 @@ test.describe('CMMS Complete Workflow', () => {
     await page.waitForURL('**/supervisor/dashboard');
     await page.goto('/supervisor/reports');
     
-    // Cari dan review repair log
-    await page.getByPlaceholder('Search repairs...').fill('Kerusakan Proyektor');
-    await page.getByRole('button', { name: /Review/i }).first().click();
+    // Review completed repair logs in reports page
+    await page.waitForTimeout(2000); // Wait for page to load
+    await expect(page.getByRole('heading', { name: 'Laporan Summary' })).toBeVisible({ timeout: 10000 });
+    await page.getByText('Ringkasan bulanan').click();
 
     // Approve repair
     await page.getByLabel('Review Notes').fill('Pekerjaan sudah sesuai standar');

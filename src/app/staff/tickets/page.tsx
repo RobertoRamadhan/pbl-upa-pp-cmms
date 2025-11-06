@@ -35,6 +35,9 @@ export default function TicketsPage() {
         }
 
         const data = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid response format');
+        }
         setTickets(data);
         setLoading(false);
       } catch (err) {
@@ -95,6 +98,7 @@ export default function TicketsPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8 text-black">
       <div className="max-w-6xl mx-auto">
+        <h1 className="text-2xl font-semibold mb-6" data-testid="tickets-heading">My Tickets</h1>
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold">Tiket Saya</h1>

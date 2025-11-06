@@ -56,7 +56,7 @@ export async function GET() {
         role: 'TECHNICIAN'
       },
       include: {
-        assignment_assignment_technicianIdTouser: {
+        assignedToMe: {
           where: {
             status: 'COMPLETED'
           }
@@ -69,12 +69,12 @@ export async function GET() {
       id: string;
       name: string;
       rating?: number | null;
-      assignment_assignment_technicianIdTouser: {
+      assignedToMe: {
         startTime: Date | null;
         endTime: Date | null;
       }[];
     }) => {
-      const assignments = tech.assignment_assignment_technicianIdTouser
+      const assignments = tech.assignedToMe
       const tasksCompleted = assignments.length
       
       // Calculate on-time percentage (assuming target time is 48 hours)

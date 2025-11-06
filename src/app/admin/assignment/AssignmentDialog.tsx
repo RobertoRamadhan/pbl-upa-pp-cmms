@@ -17,7 +17,7 @@ interface AssignmentDialogProps {
   onAssign: (technicianId: string) => Promise<void>;
 }
 
-export default function AssignmentDialog({ isOpen, onClose, ticketId, onAssign }: AssignmentDialogProps) {
+export default function AssignmentDialog({ isOpen, onClose, onAssign }: AssignmentDialogProps) {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [selectedTechnician, setSelectedTechnician] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -121,6 +121,7 @@ export default function AssignmentDialog({ isOpen, onClose, ticketId, onAssign }
                 <button
                   type="submit"
                   disabled={isSubmitting}
+                  data-testid="assign-button"
                   className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                     ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
                 >

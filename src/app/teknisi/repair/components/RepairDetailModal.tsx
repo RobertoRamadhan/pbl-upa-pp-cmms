@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { RepairRequest, RepairNote } from '../types';
+import { RepairRequest } from '../types';
 import { formatDate } from '@/lib/utils/date';
+import Image from 'next/image';
 
 interface RepairDetailModalProps {
   repair: RepairRequest;
@@ -54,12 +55,13 @@ export default function RepairDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden" data-testid="repair-form">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-bold">Detail Laporan Perbaikan</h2>
           <button
             onClick={onClose}
             className="text-black hover:text-gray-900"
+            data-testid="close-repair-modal"
           >
             ✕
           </button>
@@ -102,10 +104,11 @@ export default function RepairDetailModal({
               <div className="grid grid-cols-4 gap-4">
                 {repair.images.map((image, index) => (
                   <div key={index} className="relative aspect-square">
-                    <img
+                    <Image
                       src={image}
                       alt={`Image ${index + 1}`}
-                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
                     />
                   </div>
                 ))}
@@ -123,6 +126,7 @@ export default function RepairDetailModal({
                   onChange={(e) => setNewStatus(e.target.value as RepairRequest['status'])}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={isSubmitting}
+                  data-testid="status-select"
                 >
                   <option value="pending">Menunggu</option>
                   <option value="in_progress">Sedang Dikerjakan</option>
@@ -138,6 +142,7 @@ export default function RepairDetailModal({
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   disabled={isSubmitting}
+                  data-testid="status-note"
                 ></textarea>
               </div>
               <div>
@@ -147,6 +152,7 @@ export default function RepairDetailModal({
                     isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
                   }`}
                   disabled={isSubmitting || newStatus === repair.status || !statusNote.trim()}
+                  data-testid="submit-repair"
                 >
                   Update Status
                 </button>
@@ -165,6 +171,7 @@ export default function RepairDetailModal({
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
                 disabled={isSubmitting}
+                data-testid="note-input"
               ></textarea>
               <button
                 type="submit"
@@ -172,6 +179,7 @@ export default function RepairDetailModal({
                   isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
                 }`}
                 disabled={isSubmitting || !newNote.trim()}
+                data-testid="add-note"
               >
                 Tambah Catatan
               </button>

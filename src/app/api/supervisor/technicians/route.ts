@@ -1,11 +1,29 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { NextRequest } from "next/server";
-import { user_role } from "@prisma/client";
+import { user_role, assignment_status } from "@prisma/client";
 
-export async function GET(request: NextRequest) {
+interface TechnicianData {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  department: string | null;
+  technicianProfile: {
+    expertise: string;
+    area: string;
+    shift: string;
+    rating: number;
+    totalTasks: number;
+  } | null;
+  assignedToMe: {
+    status: assignment_status;
+  }[];
+}
+
+export async function GET() {
   try {
-    const technicians = await prisma.user.findMany({
+    const technicians = await prisma.systemUser.findMany({
       where: {
         role: "TECHNICIAN" as user_role,
         isActive: true
@@ -25,7 +43,7 @@ export async function GET(request: NextRequest) {
             totalTasks: true,
           },
         },
-        assignment_assignment_technicianIdTouser: {
+        assignedToMe: {
           where: {
             status: {
               in: ["PENDING", "IN_PROGRESS"],
@@ -39,18 +57,18 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform the data to include availability status
-    const techniciansWithStatus = technicians.map((tech: any) => ({
+    const techniciansWithStatus = technicians.map((tech: TechnicianData) => ({
       id: tech.id,
       name: tech.name,
       email: tech.email,
       phoneNumber: tech.phone,
       department: tech.department,
-      expertise: tech.technicianprofile?.expertise ?? null,
-      area: tech.technicianprofile?.area ?? null,
-      shift: tech.technicianprofile?.shift ?? null,
-      rating: tech.technicianprofile?.rating ?? 0,
-      totalTasks: tech.technicianprofile?.totalTasks ?? 0,
-      status: tech.assignment_assignment_technicianIdTouser.length > 0 ? 'Busy' : 'Available' as const
+      expertise: tech.technicianProfile?.expertise ?? null,
+      area: tech.technicianProfile?.area ?? null,
+      shift: tech.technicianProfile?.shift ?? null,
+      rating: tech.technicianProfile?.rating ?? 0,
+      totalTasks: tech.technicianProfile?.totalTasks ?? 0,
+      status: tech.assignedToMe.length > 0 ? 'Busy' : 'Available' as const
     }));
 
     return NextResponse.json(techniciansWithStatus);
@@ -67,7 +85,7 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
 
-    const technician = await prisma.user.create({
+    const technician = await prisma.systemUser.create({
       data: {
         ...data,
         role: "TECHNICIAN"

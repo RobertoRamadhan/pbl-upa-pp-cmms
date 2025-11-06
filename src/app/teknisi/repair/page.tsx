@@ -38,7 +38,7 @@ export default function RepairPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen" data-testid="loading">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
@@ -46,7 +46,7 @@ export default function RepairPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen" data-testid="error">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Error!</strong>
           <span className="block sm:inline"> {error}</span>
@@ -77,6 +77,7 @@ export default function RepairPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            data-testid="status-filter"
             className="block w-full sm:w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 text-black"
           >
             <option value="all">Semua Status</option>
@@ -91,6 +92,7 @@ export default function RepairPage() {
               placeholder="Cari subjek, deskripsi, lokasi..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="search-input"
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 pl-8 text-black"
             />
             <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
@@ -192,8 +194,9 @@ export default function RepairPage() {
                     type="button"
                     onClick={() => handleRepairClick(repair)}
                     className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                    data-testid="start-repair-btn"
                   >
-                    Detail
+                    Mulai Perbaikan
                   </button>
                   </td>
                 </tr>

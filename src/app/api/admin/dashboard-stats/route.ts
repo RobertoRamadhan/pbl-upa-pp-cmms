@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
               createdAt: true
             }
           },
-          user_assignment_technicianIdTouser: {
+          technician: {
             select: {
               name: true,
               department: true,
@@ -237,15 +237,15 @@ export async function GET(request: NextRequest) {
     const formattedAssignments = recentAssignments.map(assignment => ({
       id: assignment.id,
       ticketSubject: assignment.ticket?.subject || 'No subject',
-      technicianName: assignment.user_assignment_technicianIdTouser?.name || 'Unassigned',
-      technicianExpertise: assignment.user_assignment_technicianIdTouser?.technicianProfile?.expertise || 'N/A',
-      technicianArea: assignment.user_assignment_technicianIdTouser?.technicianProfile?.area || 'N/A',
+      technicianName: assignment.technician?.name || 'Unassigned',
+      technicianExpertise: assignment.technician?.technicianProfile?.expertise || 'N/A',
+      technicianArea: assignment.technician?.technicianProfile?.area || 'N/A',
       status: assignment.ticket?.status || 'PENDING',
       priority: assignment.ticket?.priority || 'MEDIUM',
       category: assignment.ticket?.category || 'N/A',
       location: assignment.ticket?.location || 'N/A',
       assignedAt: assignment.assignedAt.toISOString(),
-      department: assignment.user_assignment_technicianIdTouser?.department || 'N/A'
+      department: assignment.technician?.department || 'N/A'
     }));
 
     // Format monthly stats with proper grouping

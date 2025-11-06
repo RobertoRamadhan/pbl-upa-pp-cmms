@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
     const tickets = await prisma.ticket.findMany({
       where: {
-        ...(status && { status: status as any }),
+        ...(status && { status: status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' }),
         ...(userId && { reporterId: userId }),
       },
       include: {
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         },
         assignment: {
           include: {
-            user_assignment_technicianIdTouser: {
+            technician: {
               select: {
                 name: true,
               },
@@ -35,7 +35,17 @@ export async function GET(request: Request) {
       },
     })
 
-    return NextResponse.json(tickets)
+    if (!Array.isArray(tickets)) {
+      throw new Error('Invalid tickets data format');
+    }
+    
+    const sanitizedTickets = tickets.map(ticket => ({
+      ...ticket,
+      createdAt: ticket.createdAt.toISOString(),
+      updatedAt: ticket.updatedAt.toISOString()
+    }));
+
+    return NextResponse.json(sanitizedTickets)
   } catch (error) {
     console.error('Error fetching tickets:', error)
     return NextResponse.json(
@@ -62,7 +72,7 @@ export async function POST(request: Request) {
 
     // Get current authenticated user (reporterId)
     // TODO: Replace this with proper auth check
-    const user = await prisma.user.findFirst({
+    const user = await prisma.systemUser.findFirst({
       where: { role: 'STAFF' }
     });
 
@@ -82,7 +92,7 @@ export async function POST(request: Request) {
         subject,
         description,
         location,
-        priority: priority as any,
+        priority: priority as 'LOW' | 'MEDIUM' | 'HIGH',
         status: 'PENDING',
         reporterId: user.id,
         updatedAt: new Date()
@@ -90,17 +100,17 @@ export async function POST(request: Request) {
     });
 
     // Create notification for admin
-    const admins = await prisma.user.findMany({
+    const admins = await prisma.systemUser.findMany({
       where: { role: 'ADMIN' }
     });
 
     // Create notifications for all admins
-    await Promise.all(admins.map(admin => 
+    await Promise.all(admins.map((admin: { id: string }) => 
       prisma.notification.create({
         data: {
           userId: admin.id,
           message: `New ticket created: ${subject} (${ticketNumber})`,
-          type: 'TICKET'
+          type: 'INFO'  // Changed to use valid NotificationType
         }
       })
     ));
