@@ -124,3 +124,40 @@ export async function POST(request: Request) {
     )
   }
 }
+
+// DELETE - Delete a ticket by id
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Ticket id is required' }, { status: 400 });
+    }
+
+    // Ensure ticket exists
+    const existing = await prisma.ticket.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
+    }
+
+    // If there is an assignment referencing this ticket, remove dependent records first
+  const assignment = await prisma.assignment.findUnique({ where: { ticketId: id } });
+    if (assignment) {
+      // delete repair logs and materials linked to the assignment, then delete the assignment
+      await prisma.$transaction([
+        prisma.repairLog.deleteMany({ where: { assignmentId: assignment.id } }),
+        prisma.material.deleteMany({ where: { assignmentId: assignment.id } }),
+        prisma.assignment.delete({ where: { id: assignment.id } }),
+      ]);
+    }
+
+    // Now delete the ticket itself
+    await prisma.ticket.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting ticket:', error);
+    return NextResponse.json({ error: 'Failed to delete ticket' }, { status: 500 });
+  }
+}

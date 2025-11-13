@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import AssignmentDialog from '../assignment/AssignmentDialog';
 import { formatDate } from '@/lib/utils/date';
 
 interface Report {
@@ -12,25 +13,53 @@ interface Report {
   submittedAt: string;
 }
 
+interface ApiTicket {
+  id: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  reporter?: { name?: string } | null;
+  createdAt?: string;
+}
+
 export default function ReportPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [assignTicketId, setAssignTicketId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReports = async () => {
       try {
         const response = await fetch('/api/tickets');
         const data = await response.json();
-        const tickets = Array.isArray(data) ? data : [];
-        const formattedReports = tickets.map((ticket: any) => ({
-          id: ticket.id,
-          title: ticket.title || "Tanpa Judul",
-          description: ticket.description || "-",
-          status: ticket.status === "IN_PROGRESS" ? "inProgress" : (ticket.status || "pending").toLowerCase(),
-          submittedBy: ticket.reporter?.name || "Tidak diketahui",
-          submittedAt: ticket.createdAt,
-        }));
+        const tickets = Array.isArray(data) ? data as ApiTicket[] : [];
+
+        const formattedReports: Report[] = tickets.map((t) => {
+          const rawStatus = (t.status || 'PENDING').toUpperCase();
+          let status: Report['status'];
+          if (rawStatus === 'IN_PROGRESS' || rawStatus === 'INPROGRESS') {
+            status = 'inProgress';
+          } else if (rawStatus === 'ASSIGNED') {
+            status = 'assigned';
+          } else if (rawStatus === 'COMPLETED') {
+            status = 'completed';
+          } else {
+            status = 'pending';
+          }
+
+          return {
+            id: t.id,
+            title: t.title || "Tanpa Judul",
+            description: t.description || "-",
+            status,
+            submittedBy: t.reporter?.name || "Tidak diketahui",
+            submittedAt: t.createdAt ?? '',
+          };
+        });
 
         setReports(formattedReports);
       } catch (err) {
@@ -65,7 +94,7 @@ export default function ReportPage() {
 
       {/* ✅ Tabel untuk layar besar */}
       <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full">
+  <table className="min-w-full" data-testid="reports-table">
           <thead>
             <tr className="bg-gray-50 border-b">
               <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">ID</th>
@@ -106,8 +135,49 @@ export default function ReportPage() {
                     {formatDate(report.submittedAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-4">Detail</button>
-                    <button className="text-green-600 hover:text-green-900">Assign</button>
+                    <button
+                      className="text-blue-600 hover:text-blue-900 mr-4"
+                      data-testid={`detail-${report.id}`}
+                      onClick={() => setSelectedReport(report)}
+                    >
+                      Detail
+                    </button>
+                    <button
+                      className="text-green-600 hover:text-green-800 mr-4"
+                      data-testid={`assign-${report.id}`}
+                      onClick={() => {
+                        setAssignTicketId(report.id);
+                        setIsAssignOpen(true);
+                      }}
+                    >
+                      Assign
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-900"
+                      data-testid={`delete-${report.id}`}
+                      onClick={async () => {
+                        // confirmation
+                        if (!confirm('Hapus laporan ini?')) return;
+                        try {
+                          setDeletingId(report.id);
+                          const res = await fetch(`/api/tickets?id=${encodeURIComponent(report.id)}`, {
+                            method: 'DELETE',
+                          });
+                          if (!res.ok) {
+                            const body = await res.json().catch(() => ({}));
+                            throw new Error(body?.error || 'Gagal menghapus');
+                          }
+                          setReports((r) => r.filter((x) => x.id !== report.id));
+                        } catch (err) {
+                          console.error(err);
+                          alert('Gagal menghapus laporan');
+                        } finally {
+                          setDeletingId(null);
+                        }
+                      }}
+                    >
+                      {deletingId === report.id ? 'Menghapus...' : 'Hapus'}
+                    </button>
                   </td>
                 </tr>
               ))
@@ -153,10 +223,19 @@ export default function ReportPage() {
               </div>
 
               <div className="flex gap-3">
-                <button className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200">
+                <button
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
+                  onClick={() => setSelectedReport(report)}
+                >
                   Detail
                 </button>
-                <button className="text-green-600 hover:text-green-800 text-sm font-medium transition-colors duration-200">
+                <button
+                  className="text-green-600 hover:text-green-800 text-sm font-medium transition-colors duration-200"
+                  onClick={() => {
+                    setAssignTicketId(report.id);
+                    setIsAssignOpen(true);
+                  }}
+                >
                   Assign
                 </button>
               </div>
@@ -164,6 +243,73 @@ export default function ReportPage() {
           ))
         )}
       </div>
+      {/* Assignment dialog */}
+      <AssignmentDialog
+        isOpen={isAssignOpen}
+        onClose={() => {
+          setIsAssignOpen(false);
+          setAssignTicketId(null);
+        }}
+        ticketId={assignTicketId ?? ''}
+        onAssign={async (technicianId: string) => {
+          if (!assignTicketId) throw new Error('No ticket selected');
+          const res = await fetch('/api/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticketId: assignTicketId, technicianId }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body?.error || 'Failed to assign');
+          }
+          await res.json();
+          // update local report status optimistically
+          setReports((rs) => rs.map(r => r.id === assignTicketId ? { ...r, status: 'assigned' } : r));
+        }}
+      />
+      {/* Detail modal */}
+      {selectedReport && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+          data-testid="report-detail-modal"
+        >
+          <div className="bg-white rounded-lg shadow-lg max-w-xl w-full mx-4 p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-black" data-testid="report-detail-title">
+                  {selectedReport.title}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1" data-testid="report-detail-id">ID: {selectedReport.id}</p>
+              </div>
+              <button
+                className="text-gray-500 hover:text-gray-700 ml-4"
+                data-testid="report-detail-close"
+                onClick={() => setSelectedReport(null)}
+              >
+                Tutup
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-sm text-gray-700 mb-3" data-testid="report-detail-description">
+                {selectedReport.description}
+              </p>
+
+              <div className="text-xs text-gray-500">
+                <div>
+                  <span className="font-medium text-gray-700">Pelapor:</span> {selectedReport.submittedBy}
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Tanggal:</span> {formatDate(selectedReport.submittedAt)}
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Status:</span> {selectedReport.status}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -45,11 +45,20 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { ticketId, technicianId, assignedById, notes } = body;
 
+    let assignedBy = assignedById;
+    if (!assignedBy) {
+      const admin = await prisma.systemUser.findFirst({ where: { role: 'ADMIN' } });
+      if (!admin) {
+        return NextResponse.json({ error: 'No admin user found to assign as assignedBy' }, { status: 400 });
+      }
+      assignedBy = admin.id;
+    }
+
     const assignment = await prisma.assignment.create({
       data: {
         ticketId,
         technicianId,
-        assignedById,
+        assignedById: assignedBy,
         notes,
       },
       include: {

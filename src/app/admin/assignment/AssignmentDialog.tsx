@@ -17,7 +17,7 @@ interface AssignmentDialogProps {
   onAssign: (technicianId: string) => Promise<void>;
 }
 
-export default function AssignmentDialog({ isOpen, onClose, onAssign }: AssignmentDialogProps) {
+export default function AssignmentDialog({ isOpen, onClose, ticketId, onAssign }: AssignmentDialogProps) {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [selectedTechnician, setSelectedTechnician] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -76,7 +76,7 @@ export default function AssignmentDialog({ isOpen, onClose, onAssign }: Assignme
       <div className="relative bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
           <Dialog.Panel data-testid="assignment-dialog">
           <Dialog.Title className="text-lg font-medium mb-4">
-            Assign Ticket
+            Assign Ticket {ticketId ? `- ${ticketId}` : ''}
           </Dialog.Title>
 
           {loading ? (
