@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 
 export async function GET() {
   try {
-    const technicians = await prisma.user.findMany({
+    const technicians = await prisma.systemUser.findMany({
       where: {
         role: 'TECHNICIAN'
       },
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user with email already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.systemUser.findUnique({
       where: { email }
     });
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const username = email.split('@')[0]; // Create username from email
 
     // Create new technician with profile
-    const newTechnician = await prisma.user.create({
+    const newTechnician = await prisma.systemUser.create({
       data: {
         id: userId,
         name,
