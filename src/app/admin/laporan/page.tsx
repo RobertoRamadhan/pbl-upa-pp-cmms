@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import AssignmentDialog from '../assignment/AssignmentDialog';
+import ReportDetailDialog from './ReportDetailDialog';
 import { formatDate } from '@/lib/utils/date';
 
 interface Report {
@@ -267,49 +268,11 @@ export default function ReportPage() {
           setReports((rs) => rs.map(r => r.id === assignTicketId ? { ...r, status: 'assigned' } : r));
         }}
       />
-      {/* Detail modal */}
-      {selectedReport && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
-          data-testid="report-detail-modal"
-        >
-          <div className="bg-white rounded-lg shadow-lg max-w-xl w-full mx-4 p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold text-black" data-testid="report-detail-title">
-                  {selectedReport.title}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1" data-testid="report-detail-id">ID: {selectedReport.id}</p>
-              </div>
-              <button
-                className="text-gray-500 hover:text-gray-700 ml-4"
-                data-testid="report-detail-close"
-                onClick={() => setSelectedReport(null)}
-              >
-                Tutup
-              </button>
-            </div>
-
-            <div className="mt-4">
-              <p className="text-sm text-gray-700 mb-3" data-testid="report-detail-description">
-                {selectedReport.description}
-              </p>
-
-              <div className="text-xs text-gray-500">
-                <div>
-                  <span className="font-medium text-gray-700">Pelapor:</span> {selectedReport.submittedBy}
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Tanggal:</span> {formatDate(selectedReport.submittedAt)}
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Status:</span> {selectedReport.status}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReportDetailDialog
+        isOpen={!!selectedReport}
+        report={selectedReport}
+        onClose={() => setSelectedReport(null)}
+      />
     </div>
   );
 }

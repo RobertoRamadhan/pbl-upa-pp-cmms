@@ -72,8 +72,8 @@ export default function AssignmentDialog({ isOpen, onClose, ticketId, onAssign }
       onClose={onClose} 
       as="div"
       className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-      <div className="fixed inset-0 bg-black bg-opacity-25" aria-hidden="true" />
-      <div className="relative bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity z-40" aria-hidden="true" />
+      <div className="relative z-50 bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
           <Dialog.Panel data-testid="assignment-dialog">
           <Dialog.Title className="text-lg font-medium mb-4">
             Assign Ticket {ticketId ? `- ${ticketId}` : ''}
