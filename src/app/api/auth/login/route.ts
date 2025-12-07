@@ -49,13 +49,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
     }
 
     // Parse JSON body with explicit error handling to avoid Next returning HTML error pages
-    let body: any;
     try {
       body = await request.json();
     } catch (parseError) {
       console.error('Failed to parse JSON body for login:', parseError);
-      const text = await request.text().catch(() => '');
-      console.error('Raw request body (truncated):', (text || '').slice(0, 200));
+      try {
+        const text = await request.text();
+        console.error('Raw request body (truncated):', (text || '').slice(0, 200));
+      } catch (e) {
+        console.error('Could not read request body')
+      }
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 

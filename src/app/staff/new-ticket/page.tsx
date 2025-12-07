@@ -9,6 +9,12 @@ interface TicketForm {
   subject: string;
   description: string;
   priority: 'low' | 'medium' | 'high';
+  severity: 'low' | 'normal' | 'high' | 'critical';
+  contactPerson: string;
+  contactPhone: string;
+  assetCode: string;
+  estimatedTime: string;
+  notes: string;
 }
 
 export default function NewTicket() {
@@ -18,7 +24,13 @@ export default function NewTicket() {
     location: '',
     subject: '',
     description: '',
-    priority: 'medium'
+    priority: 'medium',
+    severity: 'normal',
+    contactPerson: '',
+    contactPhone: '',
+    assetCode: '',
+    estimatedTime: '',
+    notes: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,7 +58,9 @@ export default function NewTicket() {
         body: JSON.stringify({
           ...formData,
           status: 'PENDING',
-          priority: formData.priority.toUpperCase()
+          priority: formData.priority.toUpperCase(),
+          severity: formData.severity.toUpperCase(),
+          estimatedTime: formData.estimatedTime ? parseInt(formData.estimatedTime) : null
         })
       });
 
@@ -56,7 +70,7 @@ export default function NewTicket() {
 
       const data = await response.json();
       
-      alert('Tiket berhasil dibuat!');
+      alert('Tiket berhasil dibuat dengan nomor: ' + data.ticketNumber);
       router.push('/staff/tickets');
       
       // Reset form
@@ -65,7 +79,13 @@ export default function NewTicket() {
         location: '',
         subject: '',
         description: '',
-        priority: 'medium'
+        priority: 'medium',
+        severity: 'normal',
+        contactPerson: '',
+        contactPhone: '',
+        assetCode: '',
+        estimatedTime: '',
+        notes: ''
       });
     } catch (error) {
       console.error('Error creating ticket:', error);
@@ -77,48 +97,146 @@ export default function NewTicket() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 text-black">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-2xl font-bold mb-6">Buat Tiket Baru</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Kategori */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Kategori Masalah
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full p-2 border rounded-md"
-                required
-              >
-                <option value="">Pilih Kategori</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+            {/* Row 1: Category and Priority */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Kategori Masalah <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full p-2 border rounded-md"
+                  required
+                >
+                  <option value="">Pilih Kategori</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Prioritas <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) => setFormData({...formData, priority: e.target.value as 'low' | 'medium' | 'high'})}
+                  className="w-full p-2 border rounded-md"
+                  required
+                >
+                  <option value="low">Rendah</option>
+                  <option value="medium">Sedang</option>
+                  <option value="high">Tinggi</option>
+                </select>
+              </div>
             </div>
 
-            {/* Lokasi */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Lokasi
-              </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="Contoh: Ruang 101, Lab Komputer A"
-                className="w-full p-2 border rounded-md"
-                required
-              />
+            {/* Row 2: Severity and Location */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Tingkat Keparahan <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.severity}
+                  onChange={(e) => setFormData({...formData, severity: e.target.value as 'low' | 'normal' | 'high' | 'critical'})}
+                  className="w-full p-2 border rounded-md"
+                  required
+                >
+                  <option value="low">Rendah</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">Tinggi</option>
+                  <option value="critical">Kritis</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Lokasi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  placeholder="Contoh: Ruang 101, Lab Komputer A"
+                  className="w-full p-2 border rounded-md"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Nama Orang yang Menghubungi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.contactPerson}
+                  onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
+                  placeholder="Nama lengkap"
+                  className="w-full p-2 border rounded-md"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Nomor Telepon <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={formData.contactPhone}
+                  onChange={(e) => setFormData({...formData, contactPhone: e.target.value})}
+                  placeholder="Contoh: 0812345678"
+                  className="w-full p-2 border rounded-md"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Row 4: Asset Code and Estimated Time */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Kode Aset (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.assetCode}
+                  onChange={(e) => setFormData({...formData, assetCode: e.target.value})}
+                  placeholder="Contoh: AST-001"
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Estimasi Waktu (Menit) (Opsional)
+                </label>
+                <input
+                  type="number"
+                  value={formData.estimatedTime}
+                  onChange={(e) => setFormData({...formData, estimatedTime: e.target.value})}
+                  placeholder="Contoh: 60"
+                  min="0"
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
             </div>
 
             {/* Subject */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Subjek
+                Subjek <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -133,7 +251,7 @@ export default function NewTicket() {
             {/* Description */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Deskripsi
+                Deskripsi Masalah <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={formData.description}
@@ -144,29 +262,28 @@ export default function NewTicket() {
               />
             </div>
 
-            {/* Priority */}
+            {/* Additional Notes */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Prioritas
+                Catatan Tambahan (Opsional)
               </label>
-              <div className="flex space-x-4">
-                {['low', 'medium', 'high'].map((priority) => (
-                  <label key={priority} className="flex items-center">
-                    <input
-                      type="radio"
-                      value={priority}
-                      checked={formData.priority === priority}
-                      onChange={(e) => setFormData({...formData, priority: e.target.value as 'low' | 'medium' | 'high'})}
-                      className="mr-2"
-                    />
-                    <span className="capitalize">{priority}</span>
-                  </label>
-                ))}
-              </div>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                placeholder="Informasi tambahan yang mungkin membantu teknisi..."
+                className="w-full p-2 border rounded-md h-24"
+              />
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="px-6 py-2 rounded-lg text-gray-700 bg-gray-300 hover:bg-gray-400"
+              >
+                Batal
+              </button>
               <button
                 type="submit"
                 disabled={isSubmitting}

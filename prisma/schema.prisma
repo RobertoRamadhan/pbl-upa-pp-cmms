@@ -151,6 +151,14 @@ model Ticket {
   status             ticket_status        @default(PENDING)
   reporterId         String
   attachments        String?
+  estimatedTime      Int?                 // in minutes
+  actualTime         Int?                 // in minutes
+  notes              String?
+  contactPerson      String?
+  contactPhone       String?
+  assetCode          String?
+  severity           ticket_severity      @default(NORMAL)
+  resolutionNotes    String?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime
   completedAt        DateTime?
@@ -159,6 +167,13 @@ model Ticket {
   maintenanceHistory MaintenanceHistory[]
 
   @@index([reporterId], map: "Ticket_reporterId_fkey")
+}
+
+enum ticket_severity {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
 }
 
 enum user_role {

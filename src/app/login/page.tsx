@@ -175,10 +175,15 @@ export default function LoginPage() {
       const raw = await response.text();
       console.log('Raw response text:', raw || '(empty response)');
       
-      // Attempt to parse JSON
+      // Attempt to parse JSON with better error handling
       let data: any = null;
+      if (!raw) {
+        console.warn('Empty response from server');
+        throw new Error('Server returned empty response');
+      }
+
       try {
-        data = raw ? JSON.parse(raw) : null;
+        data = JSON.parse(raw);
         console.log('Parsed response:', {
           hasData: !!data,
           type: typeof data,
@@ -192,7 +197,7 @@ export default function LoginPage() {
           rawPreview: raw?.substring(0, 100),
           ...responseDetails
         });
-        throw new Error(`Invalid JSON response: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`);
+        throw new Error(`Invalid JSON response from server: ${raw.substring(0, 50)}`);
       }
       console.log('Server response data:', {
         success: response.ok,
