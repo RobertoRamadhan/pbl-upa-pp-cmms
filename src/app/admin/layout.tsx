@@ -70,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 relative">
+    <div className="flex min-h-screen relative">
       {/* Sidebar */}
       <aside
         className={`fixed md:fixed z-40 top-0 left-0 bottom-0 flex flex-col bg-gradient-to-b from-blue-700 to-blue-800 text-white w-64 transform transition-transform duration-300 ease-in-out shadow-xl ${

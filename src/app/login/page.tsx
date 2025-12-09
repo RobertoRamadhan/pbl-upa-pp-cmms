@@ -21,7 +21,6 @@ interface Credentials {
 
 export default function LoginPage() {
   const router = useRouter();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedRole, setSelectedRole] = useState<RoleType>('staff');
   const [credentials, setCredentials] = useState<Credentials>({
     username: '',
@@ -65,21 +64,14 @@ export default function LoginPage() {
     const checkSession = async () => {
       try {
         const sessionStr = localStorage.getItem('user_session');
-        console.log('Checking session status...');
         
         if (!sessionStr) {
-          console.log('No session found');
           return;
         }
 
         const session = JSON.parse(sessionStr);
-        console.log('Session found:', { 
-          ...session,
-          id: session.id ? '[HIDDEN]' : null 
-        });
         
         if (!session.id || !session.role) {
-          console.log('Invalid session data');
           localStorage.removeItem('user_session');
           return;
         }
@@ -88,12 +80,10 @@ export default function LoginPage() {
         const validRoles: RoleType[] = ['admin', 'staff', 'teknisi', 'supervisor'];
         
         if (!validRoles.includes(role)) {
-          console.log('Invalid role in session:', role);
           localStorage.removeItem('user_session');
           return;
         }
 
-        // Map role untuk path
         const rolePathMap: Record<RoleType, string> = {
           'admin': 'admin',
           'staff': 'staff',
@@ -101,9 +91,8 @@ export default function LoginPage() {
           'supervisor': 'supervisor'
         };
 
-        const dashboardPath = `/${rolePathMap[role]}/dashboard`;
-        console.log('Redirecting to dashboard:', dashboardPath);
-        await router.replace(dashboardPath);
+        // Direct redirect tanpa await router.replace untuk kecepatan
+        router.replace(`/${rolePathMap[role]}/dashboard`);
 
       } catch (error) {
         console.error('Session check error:', error);
@@ -126,24 +115,9 @@ export default function LoginPage() {
         return;
       }
 
-      console.log('Starting login process...');
-      console.log('Form data:', {
-        username: credentials.username,
-        role: selectedRole,
-        hasPassword: !!credentials.password
-      });
-
-      // Set timeout untuk request
+      // Set timeout untuk request - 8 detik sudah cukup
       const controller = new AbortController();
-      timeoutRef.current = setTimeout(() => controller.abort(), 10000); // 10 detik timeout
-
-      console.log('Sending request:', {
-        url: '/api/auth/login',
-        method: 'POST',
-        username: credentials.username,
-        role: selectedRole,
-        hasPassword: !!credentials.password
-      });
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -158,56 +132,23 @@ export default function LoginPage() {
         signal: controller.signal
       });
 
-      console.log('Server response status:', response.status);
+      clearTimeout(timeoutId);
 
       // Get response details first
-      const responseDetails = {
-        status: response.status,
-        statusText: response.statusText,
-        contentType: response.headers.get('content-type'),
-        url: response.url,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      };
-      console.log('Response details:', responseDetails);
-
-      // Read and log raw response
       const raw = await response.text();
-      console.log('Raw response text:', raw || '(empty response)');
       
       // Attempt to parse JSON with better error handling
       let data: any = null;
       if (!raw) {
-        console.warn('Empty response from server');
         throw new Error('Server returned empty response');
       }
 
       try {
         data = JSON.parse(raw);
-        console.log('Parsed response:', {
-          hasData: !!data,
-          type: typeof data,
-          keys: data ? Object.keys(data) : [],
-          data: data
-        });
       } catch (parseErr) {
-        console.error('JSON parse error:', {
-          error: parseErr instanceof Error ? parseErr.message : String(parseErr),
-          rawLength: raw?.length || 0,
-          rawPreview: raw?.substring(0, 100),
-          ...responseDetails
-        });
-        throw new Error(`Invalid JSON response from server: ${raw.substring(0, 50)}`);
+        console.error('JSON parse error:', parseErr);
+        throw new Error(`Invalid JSON response from server`);
       }
-      console.log('Server response data:', {
-        success: response.ok,
-        statusCode: response.status,
-        hasError: !!data?.error,
-        hasId: !!data?.id,
-        hasRole: !!data?.role,
-        dataPresent: !!data,
-        dataType: data ? typeof data : 'null'
-      });
 
       if (!response.ok) {
         // Prepare detailed error information
@@ -221,17 +162,11 @@ export default function LoginPage() {
           response: {
             status: response.status,
             statusText: response.statusText,
-            contentType: response.headers.get('content-type'),
-            ok: response.ok,
-            hasData: !!data,
             error: data?.error,
-            details: data?.details,
-            rawData: data
           }
         };
         
-        // Log comprehensive error information
-        console.error('Login failed:', JSON.stringify(errorInfo, null, 2));
+        console.error('Login failed:', errorInfo);
         
         // Handle validation errors (400)
         if (response.status === 400) {
@@ -258,6 +193,9 @@ export default function LoginPage() {
           case 500:
             setError('Terjadi kesalahan pada server');
             break;
+          case 503:
+            setError('Server sedang tidak tersedia. Silakan coba lagi.');
+            break;
           default:
             setError(data?.error || `Gagal login (${response.status}). Silakan coba lagi.`);
         }
@@ -273,9 +211,12 @@ export default function LoginPage() {
       
       localStorage.setItem('user_session', JSON.stringify(sessionData));
       
-      const dashboardPath = `/${sessionData.role.toLowerCase()}/dashboard`;
-      console.log('Navigating to:', dashboardPath);
-      await router.replace(dashboardPath);
+      // Direct redirect tanpa await untuk kecepatan
+      // Staff langsung ke new-ticket, role lain ke dashboard
+      const redirectPath = sessionData.role === 'staff' 
+        ? '/staff/new-ticket' 
+        : `/${sessionData.role.toLowerCase()}/dashboard`;
+      router.replace(redirectPath);
       
     } catch (err) {
       // Log detailed error information
@@ -321,10 +262,6 @@ export default function LoginPage() {
       });
     } finally {
       setIsLoading(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
     }
   };
 

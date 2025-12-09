@@ -26,14 +26,15 @@ export default function RootLayout({
       <body 
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen`}
         style={{
-          backgroundImage: 'url("/bg.js.jpeg")',
+          backgroundImage: 'url("/Gedung.jpg")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed'
+          backgroundAttachment: 'fixed',
+          backgroundColor: '#1a1a2e'
         }}
       >
-        <div className="min-h-screen bg-white/35 backdrop-blur-sm">
+        <div className="min-h-screen bg-black/25 backdrop-blur-sm">
           {children}
         </div>
       </body>

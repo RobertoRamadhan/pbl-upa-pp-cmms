@@ -74,9 +74,9 @@ model Assignment {
   endTime      DateTime?
   assignedAt   DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
-  assignedBy   SystemUser        @relation("AssignedBy", fields: [assignedById], references: [id])
-  technician   SystemUser        @relation("AssignedTo", fields: [technicianId], references: [id])
-  ticket       Ticket            @relation(fields: [ticketId], references: [id])
+  assignedBy   SystemUser        @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+  technician   SystemUser        @relation("AssignedTo", fields: [technicianId], references: [id], onDelete: Cascade)
+  ticket       Ticket            @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   materials    Material[]
   repairLogs   RepairLog[]
 
@@ -122,8 +122,8 @@ model RepairLog {
   timeSpent    Int
   attachments  String?
   createdAt    DateTime         @default(now())
-  assignment   Assignment       @relation(fields: [assignmentId], references: [id])
-  user         SystemUser             @relation(fields: [technicianId], references: [id])
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user         SystemUser       @relation(fields: [technicianId], references: [id], onDelete: Cascade)
 
   @@index([assignmentId])
   @@index([technicianId])
@@ -137,7 +137,7 @@ model TechnicianProfile {
   shift      String
   rating     Float  @default(0)
   totalTasks Int    @default(0)
-  user       SystemUser   @relation(fields: [userId], references: [id])
+  user       SystemUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Ticket {
@@ -163,7 +163,7 @@ model Ticket {
   updatedAt          DateTime
   completedAt        DateTime?
   assignment         Assignment?
-  user               SystemUser           @relation(fields: [reporterId], references: [id])
+  user               SystemUser           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
   maintenanceHistory MaintenanceHistory[]
 
   @@index([reporterId], map: "Ticket_reporterId_fkey")
