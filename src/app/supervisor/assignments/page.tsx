@@ -40,9 +40,9 @@ export default function SupervisorAssignments() {
   }, []);
 
   // Hitung jumlah tiket per status
-  const todoCount = assignments.filter(a => a.status === 'TODO').length;
   const inProgressCount = assignments.filter(a => a.status === 'IN_PROGRESS').length;
-  const doneCount = assignments.filter(a => a.status === 'COMPLETED').length;
+  const onProgressCount = assignments.filter(a => a.status === 'ON_PROGRESS').length;
+  const closedCount = assignments.filter(a => a.status === 'CLOSED').length;
 
   // Data yang akan ditampilkan berdasarkan status terpilih
   const filteredAssignments = selectedStatus
@@ -61,45 +61,45 @@ export default function SupervisorAssignments() {
     <div className="space-y-6">
       {/* === Bagian Kartu Status === */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {/* TO DO */}
-        <div className="text-center bg-gray-300 rounded-xl shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-2">TO DO :</h2>
-          <p className="text-sm text-gray-700">Total tickets</p>
-          <p className="text-4xl font-bold my-2">{todoCount}</p>
-          <button
-            className="mt-2 px-4 py-1 bg-lime-400 text-black font-semibold rounded-full hover:bg-lime-500 transition-colors"
-            onClick={() =>
-              setSelectedStatus(selectedStatus === 'TODO' ? null : 'TODO')
-            }
-          >
-            VIEW
-          </button>
-        </div>
-
         {/* IN PROGRESS */}
-        <div className="text-center bg-gradient-to-b from-yellow-300 to-yellow-400 rounded-xl shadow-md p-6">
+        <div className="text-center bg-gray-300 rounded-xl shadow-md p-6">
           <h2 className="text-lg font-semibold mb-2">IN PROGRESS :</h2>
           <p className="text-sm text-gray-700">Total tickets</p>
           <p className="text-4xl font-bold my-2">{inProgressCount}</p>
           <button
             className="mt-2 px-4 py-1 bg-lime-400 text-black font-semibold rounded-full hover:bg-lime-500 transition-colors"
             onClick={() =>
-              setSelectedStatus(selectedStatus === 'IN_PROGRESS' ? null : 'IN_PROGRESS')
+              setSelectedStatus(selectedStatus === 'IN PROGRESS' ? null : 'IN PROGRESS')
             }
           >
             VIEW
           </button>
         </div>
 
-        {/* DONE */}
-        <div className="text-center bg-gradient-to-b from-green-300 to-green-400 rounded-xl shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-2">DONE :</h2>
+        {/* ON PROGRESS */}
+        <div className="text-center bg-gradient-to-b from-yellow-300 to-yellow-400 rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-2">ON PROGRESS :</h2>
           <p className="text-sm text-gray-700">Total tickets</p>
-          <p className="text-4xl font-bold my-2">{doneCount}</p>
+          <p className="text-4xl font-bold my-2">{onProgressCount}</p>
           <button
             className="mt-2 px-4 py-1 bg-lime-400 text-black font-semibold rounded-full hover:bg-lime-500 transition-colors"
             onClick={() =>
-              setSelectedStatus(selectedStatus === 'COMPLETED' ? null : 'COMPLETED')
+              setSelectedStatus(selectedStatus === 'ON_PROGRESS' ? null : 'ON_PROGRESS')
+            }
+          >
+            VIEW
+          </button>
+        </div>
+
+        {/* CLOSED */}
+        <div className="text-center bg-gradient-to-b from-green-300 to-green-400 rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-2">CLOSED :</h2>
+          <p className="text-sm text-gray-700">Total tickets</p>
+          <p className="text-4xl font-bold my-2">{closedCount}</p>
+          <button
+            className="mt-2 px-4 py-1 bg-lime-400 text-black font-semibold rounded-full hover:bg-lime-500 transition-colors"
+            onClick={() =>
+              setSelectedStatus(selectedStatus === 'CLOSED' ? null : 'CLOSED')
             }
           >
             VIEW

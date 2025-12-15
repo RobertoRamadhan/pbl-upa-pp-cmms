@@ -94,8 +94,9 @@ export async function POST(request: Request) {
 
     // Normalize status value to Prisma enum (repairlog_status)
     const rawStatus = String(status || '').toLowerCase();
+    const isClosed = rawStatus.includes('close');
     let normalizedRepairStatus: 'ONGOING' | 'COMPLETED' | 'NEED_PARTS' = 'ONGOING';
-    if (rawStatus === 'completed' || rawStatus === 'complete') normalizedRepairStatus = 'COMPLETED';
+    if (rawStatus === 'completed' || rawStatus === 'complete' || isClosed) normalizedRepairStatus = 'COMPLETED';
     else if (rawStatus === 'need_parts' || rawStatus === 'needparts' || rawStatus === 'need parts') normalizedRepairStatus = 'NEED_PARTS';
 
     const repairLog = await prisma.repairLog.create({
@@ -124,10 +125,12 @@ export async function POST(request: Request) {
     });
     // Update assignment/ticket state if the normalized status means completed
     if (normalizedRepairStatus === 'COMPLETED') {
+      // If the raw status indicates 'closed' (e.g. 'closed' or 'close'), mark assignment/ticket as CLOSED
+      const assignmentStatus = isClosed ? 'CLOSED' : 'COMPLETED';
       await prisma.assignment.update({
         where: { id: assignmentId },
         data: {
-          status: 'COMPLETED',
+          status: assignmentStatus,
           endTime: new Date(),
         },
       });
@@ -135,14 +138,16 @@ export async function POST(request: Request) {
       // Update ticket status
       const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId }, select: { ticketId: true } });
       if (assignment) {
+        const ticketStatus = isClosed ? 'CLOSED' : 'COMPLETED';
         const ticket = await prisma.ticket.update({
           where: { id: assignment.ticketId },
-          data: { status: 'COMPLETED', completedAt: new Date() },
+          data: { status: ticketStatus, completedAt: new Date() },
           include: { user: true },
         });
 
         if (ticket.user) {
-          await prisma.notification.create({ data: { userId: ticket.user.id, message: `Your ticket has been completed: ${ticket.subject}`, type: 'SUCCESS' } });
+          const message = isClosed ? `Your ticket has been closed: ${ticket.subject}` : `Your ticket has been completed: ${ticket.subject}`;
+          await prisma.notification.create({ data: { userId: ticket.user.id, message, type: 'SUCCESS' } });
         }
       }
     }

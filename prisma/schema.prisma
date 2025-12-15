@@ -180,6 +180,7 @@ enum assignment_status {
   REJECTED
   IN_PROGRESS
   COMPLETED
+  CLOSED
 }
 
 enum repairlog_status {
@@ -200,6 +201,7 @@ enum ticket_status {
   ASSIGNED
   IN_PROGRESS
   COMPLETED
+  CLOSED
   CANCELLED
 }
 
