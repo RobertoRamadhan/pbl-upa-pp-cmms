@@ -169,7 +169,7 @@ export default function StaffLayout({
       </div>
 
       {/* Main Content */}
-      <main className={`min-h-screen bg-gray-50 lg:ml-64 transition-all duration-300`}>
+      <main className={`min-h-screen bg-white lg:ml-64 transition-all duration-300`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 lg:pt-8 pb-8">
           {children}
         </div>

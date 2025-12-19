@@ -5,6 +5,7 @@ export function middleware(request: NextRequest) {
   const authToken = request.cookies.get('auth_token');
   const isAuthenticated = !!authToken;
   const isLoginPage = request.nextUrl.pathname === '/login';
+  const isRegisterPage = request.nextUrl.pathname === '/register';
   const isPublicPage = request.nextUrl.pathname === '/';
 
   // Ambil role dari cookie token jika ada
@@ -21,7 +22,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Jika user belum ter-autentikasi dan mencoba mengakses halaman yang dilindungi
-  if (!isAuthenticated && !isLoginPage && !isPublicPage) {
+  if (!isAuthenticated && !isLoginPage && !isRegisterPage && !isPublicPage) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

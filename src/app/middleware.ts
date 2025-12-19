@@ -6,6 +6,7 @@ export async function middleware(request: NextRequest) {
   // Skip untuk route publik
   if (
     request.nextUrl.pathname === '/login' ||
+    request.nextUrl.pathname === '/register' ||
     request.nextUrl.pathname === '/favicon.ico' ||
     request.nextUrl.pathname.startsWith('/_next')
   ) {

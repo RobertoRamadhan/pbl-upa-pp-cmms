@@ -67,22 +67,6 @@ async function main() {
     });
     console.log('Technician and profile created:', { technician, techProfile });
 
-    // Create staff user
-    const staffPassword = await hash('staff123', 10);
-    const staff = await prisma.systemUser.create({
-      data: {
-        id: 'staff-1',
-        username: 'staff',
-        password: staffPassword,
-        role: 'STAFF',
-        name: 'Jane Staff',
-        email: 'staff@example.com',
-        department: 'Academic',
-        updatedAt: new Date(),
-      },
-    });
-    console.log('Staff created:', staff);
-
     // Create supervisor user
     const supervisorPassword = await hash('supervisor123', 10);
     const supervisor = await prisma.systemUser.create({
@@ -99,7 +83,7 @@ async function main() {
     });
     console.log('Supervisor created:', supervisor);
 
-    // Create sample ticket
+    // Create sample ticket (using supervisor as reporter for demonstration)
     const ticket = await prisma.ticket.create({
       data: {
         id: 'ticket-1',
@@ -109,7 +93,7 @@ async function main() {
         description: 'The printer in room 101 is not responding',
         location: 'Room 101',
         priority: 'MEDIUM',
-        reporterId: staff.id,
+        reporterId: supervisor.id,
         updatedAt: new Date(),
       },
     });

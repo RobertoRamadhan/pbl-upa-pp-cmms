@@ -1,23 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface UserProfile {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  department: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
 export default function StaffProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    nama: 'Sarah Johnson',
-    email: 'staff@upa-pp.ac.id',
-    noHP: '081234567891',
-    jabatan: 'Staff Administrasi',
-    bergabung: '2023-02-01',
-  });
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
-    setIsEditing(false);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const sessionStr = localStorage.getItem('user_session');
+        if (!sessionStr) {
+          setError('Session tidak ditemukan');
+          return;
+        }
+
+        const session = JSON.parse(sessionStr);
+        
+        const response = await fetch(`/api/staff/profile?userId=${session.id}`);
+        if (!response.ok) {
+          throw new Error('Gagal mengambil data profil');
+        }
+        
+        const data = await response.json();
+        setProfile(data);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError('Gagal mengambil data profil');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    if (!profile) return;
+    try {
+      const response = await fetch('/api/staff/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile)
+      });
+      if (response.ok) {
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error('Error saving profile:', err);
+    }
   };
 
+  if (isLoading) {
+    return (
+      <div className='min-h-screen bg-white p-4 flex items-center justify-center'>
+        <p className='text-gray-600'>Loading...</p>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className='min-h-screen bg-white p-4'>
+        <div className='max-w-4xl mx-auto bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg'>
+          {error || 'Data profil tidak ditemukan'}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className='min-h-screen bg-gray-50 p-4'>
+    <div className='min-h-screen bg-white p-4'>
       <div className='max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden'>
         <div className='bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8 flex flex-col items-center'>
           <div className='w-32 h-32 bg-white rounded-full mb-4 flex items-center justify-center'>
@@ -25,8 +91,8 @@ export default function StaffProfilePage() {
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' />
             </svg>
           </div>
-          <h1 className='text-2xl font-bold'>{profile.nama}</h1>
-          <p className='text-blue-100'>{profile.jabatan}</p>
+          <h1 className='text-2xl font-bold'>{profile.name}</h1>
+          <p className='text-blue-100'>{profile.department}</p>
         </div>
 
         <div className='p-6'>
@@ -38,8 +104,8 @@ export default function StaffProfilePage() {
                   <label className='block text-sm mb-1'>Nama Lengkap</label>
                   <input
                     type='text'
-                    value={profile.nama}
-                    onChange={(e) => setProfile({...profile, nama: e.target.value})}
+                    value={profile.name}
+                    onChange={(e) => setProfile({...profile, name: e.target.value})}
                     className='w-full p-2 border rounded'
                   />
                 </div>
@@ -53,11 +119,11 @@ export default function StaffProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className='block text-sm mb-1'>Nomor HP</label>
+                  <label className='block text-sm mb-1'>Departemen</label>
                   <input
-                    type='tel'
-                    value={profile.noHP}
-                    onChange={(e) => setProfile({...profile, noHP: e.target.value})}
+                    type='text'
+                    value={profile.department}
+                    onChange={(e) => setProfile({...profile, department: e.target.value})}
                     className='w-full p-2 border rounded'
                   />
                 </div>
@@ -65,16 +131,20 @@ export default function StaffProfilePage() {
             ) : (
               <div className='space-y-4'>
                 <div className='flex justify-between'>
+                  <span>Username:</span>
+                  <span>{profile.username}</span>
+                </div>
+                <div className='flex justify-between'>
                   <span>Email:</span>
                   <span>{profile.email}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span>Nomor HP:</span>
-                  <span>{profile.noHP}</span>
+                  <span>Departemen:</span>
+                  <span>{profile.department}</span>
                 </div>
                 <div className='flex justify-between'>
                   <span>Bergabung Sejak:</span>
-                  <span>{profile.bergabung}</span>
+                  <span>{new Date(profile.createdAt).toLocaleDateString('id-ID')}</span>
                 </div>
               </div>
             )}

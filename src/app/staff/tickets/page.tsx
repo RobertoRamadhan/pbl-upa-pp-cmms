@@ -200,14 +200,11 @@ export default function TicketsPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">No. Tiket</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Kategori</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Subjek</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Lokasi</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Prioritas</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Keparahan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Teknisi</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Update</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Tanggal</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Aksi</th>
                   </tr>
                 </thead>
@@ -215,29 +212,22 @@ export default function TicketsPage() {
                   {filteredTickets.map((ticket) => (
                     <tr key={ticket.id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">{ticket.ticketNumber}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{ticket.category}</td>
                       <td className="px-6 py-4 text-sm max-w-xs truncate">{ticket.subject}</td>
-                      <td className="px-6 py-4 text-sm">{ticket.location}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
-                          {ticket.status}
-                        </span>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`font-bold ${getPriorityColor(ticket.priority)}`}>
                           {ticket.priority}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full font-semibold ${getSeverityBadge(ticket.severity)}`}>
-                          {ticket.severity}
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                          {ticket.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {ticket.assignment?.technician?.name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {formatDate(ticket.updatedAt)}
+                        {formatDate(ticket.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button

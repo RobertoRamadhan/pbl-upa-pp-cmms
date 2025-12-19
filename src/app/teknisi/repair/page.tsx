@@ -110,17 +110,28 @@ export default function RepairPage() {
           )}
           {filteredRepairs.map((repair) => (
             <div key={repair.id} className="bg-white shadow rounded-lg p-4">
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start mb-2">
                 <div>
-                  <div className="font-medium text-black">{repair.subject}</div>
-                  <div className="text-sm text-gray-600">{repair.location}</div>
+                  <div className="font-medium text-black text-sm">{repair.subject}</div>
+                  <div className="text-xs text-gray-600 mt-1">{repair.location}</div>
                 </div>
                 <button
                   onClick={() => handleRepairClick(repair)}
-                  className="text-blue-600 hover:text-blue-900 font-semibold"
+                  className="text-blue-600 hover:text-blue-900 font-semibold text-xs"
                 >
                   Detail
                 </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div className="text-gray-600">
+                  <span className="font-medium">Kategori:</span> {repair.category}
+                </div>
+                <div className="text-gray-600">
+                  <span className="font-medium">Pengguna:</span> {repair.userName}
+                </div>
+                <div className="text-gray-600">
+                  <span className="font-medium">Dept:</span> {repair.department}
+                </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -153,9 +164,13 @@ export default function RepairPage() {
           <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Subjek/Lokasi</th>
-                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Status</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Subjek</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Kategori</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Lokasi</th>
                 <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Prioritas</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Status</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Pengguna</th>
+                <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Departemen</th>
                 <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Tanggal Submit</th>
                 <th className="px-4 sm:px-6 py-2 text-left font-medium text-black uppercase tracking-wider">Aksi</th>
               </tr>
@@ -165,7 +180,18 @@ export default function RepairPage() {
                 <tr key={repair.id} className="hover:bg-gray-50">
                   <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
                     <div className="font-medium text-black">{repair.subject}</div>
-                    <div className="text-sm text-gray-600">{repair.location}</div>
+                  </td>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap text-sm text-black">{repair.category}</td>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap text-sm text-black">{repair.location}</td>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
+                    <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                      repair.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                      repair.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                      repair.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {repair.priority.toUpperCase()}
+                    </span>
                   </td>
                   <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
@@ -178,17 +204,9 @@ export default function RepairPage() {
                       {repair.status.replace('_', ' ').toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
-                      repair.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                      repair.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                      repair.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {repair.priority.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap">{formatDate(repair.submitDate)}</td>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap text-sm text-black">{repair.userName}</td>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap text-sm text-black">{repair.department}</td>
+                  <td className="px-4 sm:px-6 py-2 whitespace-nowrap text-sm text-black">{formatDate(repair.submitDate)}</td>
                   <td className="px-4 sm:px-6 py-2 whitespace-nowrap">
                   <button
                     type="button"

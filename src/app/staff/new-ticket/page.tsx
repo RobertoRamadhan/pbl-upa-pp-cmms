@@ -10,10 +10,7 @@ interface TicketForm {
   description: string;
   priority: 'low' | 'medium' | 'high';
   severity: 'low' | 'normal' | 'high' | 'critical';
-  contactPerson: string;
-  contactPhone: string;
   assetCode: string;
-  estimatedTime: string;
   notes: string;
 }
 
@@ -26,10 +23,7 @@ export default function NewTicket() {
     description: '',
     priority: 'medium',
     severity: 'normal',
-    contactPerson: '',
-    contactPhone: '',
     assetCode: '',
-    estimatedTime: '',
     notes: ''
   });
 
@@ -59,8 +53,7 @@ export default function NewTicket() {
           ...formData,
           status: 'PENDING',
           priority: formData.priority.toUpperCase(),
-          severity: formData.severity.toUpperCase(),
-          estimatedTime: formData.estimatedTime ? parseInt(formData.estimatedTime) : null
+          severity: formData.severity.toUpperCase()
         })
       });
 
@@ -81,10 +74,7 @@ export default function NewTicket() {
         description: '',
         priority: 'medium',
         severity: 'normal',
-        contactPerson: '',
-        contactPhone: '',
         assetCode: '',
-        estimatedTime: '',
         notes: ''
       });
     } catch (error) {
@@ -172,65 +162,18 @@ export default function NewTicket() {
               </div>
             </div>
 
-            {/* Row 3: Contact Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Nama Orang yang Menghubungi <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.contactPerson}
-                  onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
-                  placeholder="Nama lengkap"
-                  className="w-full p-2 border rounded-md"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Nomor Telepon <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={formData.contactPhone}
-                  onChange={(e) => setFormData({...formData, contactPhone: e.target.value})}
-                  placeholder="Contoh: 0812345678"
-                  className="w-full p-2 border rounded-md"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Row 4: Asset Code and Estimated Time */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Kode Aset (Opsional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.assetCode}
-                  onChange={(e) => setFormData({...formData, assetCode: e.target.value})}
-                  placeholder="Contoh: AST-001"
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Estimasi Waktu (Menit) (Opsional)
-                </label>
-                <input
-                  type="number"
-                  value={formData.estimatedTime}
-                  onChange={(e) => setFormData({...formData, estimatedTime: e.target.value})}
-                  placeholder="Contoh: 60"
-                  min="0"
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
+            {/* Row 3: Asset Code */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Kode Aset (Opsional)
+              </label>
+              <input
+                type="text"
+                value={formData.assetCode}
+                onChange={(e) => setFormData({...formData, assetCode: e.target.value})}
+                placeholder="Contoh: AST-001"
+                className="w-full p-2 border rounded-md"
+              />
             </div>
 
             {/* Subject */}

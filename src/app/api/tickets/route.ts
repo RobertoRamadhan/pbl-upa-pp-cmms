@@ -65,11 +65,8 @@ export async function POST(request: Request) {
       description,
       location,
       priority,
-      contactPerson,
-      contactPhone,
       assetCode,
       severity,
-      estimatedTime,
       notes
     } = body;
 
@@ -101,11 +98,8 @@ export async function POST(request: Request) {
         priority: priority as 'LOW' | 'MEDIUM' | 'HIGH',
         status: 'PENDING',
         reporterId: user.id,
-        contactPerson,
-        contactPhone,
         assetCode,
         severity: severity as 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL' || 'NORMAL',
-        estimatedTime,
         notes,
         updatedAt: new Date()
       },

@@ -13,10 +13,7 @@ interface TicketDetailProps {
     priority: string;
     severity: string;
     status: string;
-    contactPerson?: string;
-    contactPhone?: string;
     assetCode?: string;
-    estimatedTime?: number;
     actualTime?: number;
     notes?: string;
     resolutionNotes?: string;
@@ -142,36 +139,19 @@ const TicketDetailModal: React.FC<TicketDetailProps> = ({ ticket, isOpen, onClos
 
           {/* Main Information */}
           <div className="border-t pt-6 space-y-4">
-            {/* Location and Contact */}
+            {/* Location and Asset Code */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-500 uppercase">Lokasi</p>
                 <p className="font-semibold">{ticket.location}</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase">Kontak</p>
-                <p className="font-semibold">{ticket.contactPerson || '-'}</p>
-                <p className="text-sm text-gray-600">{ticket.contactPhone || '-'}</p>
-              </div>
+              {ticket.assetCode && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">Kode Aset</p>
+                  <p className="font-semibold">{ticket.assetCode}</p>
+                </div>
+              )}
             </div>
-
-            {/* Asset Code and Estimated Time */}
-            {(ticket.assetCode || ticket.estimatedTime) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {ticket.assetCode && (
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Kode Aset</p>
-                    <p className="font-semibold">{ticket.assetCode}</p>
-                  </div>
-                )}
-                {ticket.estimatedTime && (
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Estimasi Waktu</p>
-                    <p className="font-semibold">{ticket.estimatedTime} menit</p>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Description */}
             <div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { FormEvent } from 'react';
 
 type RoleType = 'staff' | 'admin' | 'teknisi' | 'supervisor';
@@ -381,7 +382,13 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>© 2024 CMMS System. All rights reserved.</p>
+          <p className="mb-4">© 2024 CMMS System. All rights reserved.</p>
+          <p>
+            Belum punya akun staff?{' '}
+            <Link href="/register" className="text-blue-600 hover:text-blue-800 font-semibold">
+              Daftar di sini
+            </Link>
+          </p>
         </div>
       </div>
     </div>
