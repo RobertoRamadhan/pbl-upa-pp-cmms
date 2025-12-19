@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import AssignmentDialog from "./AssignmentDialog";
+import TicketDetailModal from "../../staff/components/TicketDetailModal";
 import type { FC } from 'react';
 
 interface Assignment {
   id: string;
   reportId: string;
   reportTitle: string;
+  ticketNumber?: string;
   technician?: string;
   assignedAt?: string;
   status: "pending" | "assigned" | "inProgress" | "waitingApproval" | "completed";
@@ -33,10 +35,11 @@ const AssignmentPage: FC = () => {
       const formattedAssignments = (assignmentsData || []).map((assignment: any) => ({
         id: assignment.id,
         reportId: assignment.ticket.id,
+        ticketNumber: assignment.ticket.ticketNumber || assignment.ticket.id,
         reportTitle: assignment.ticket.subject,
-        technician: assignment.user_assignment_technicianIdTouser?.name,
-        assignedAt: assignment.createdAt,
-        status: assignment.status.toLowerCase(),
+        technician: assignment.technician?.name || assignment.technician?.user?.name,
+        assignedAt: assignment.assignedAt || assignment.createdAt,
+        status: (assignment.status || '').toLowerCase(),
       }));
 
       const unassignedTickets = (ticketsData || []).map((ticket: any) => ({
@@ -94,6 +97,26 @@ const AssignmentPage: FC = () => {
     } catch (error) {
       console.error('Error assigning ticket:', error);
       throw error;
+    }
+  };
+
+  const [selectedTicketDetail, setSelectedTicketDetail] = useState<any | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const handleViewDetail = async (ticketId: string) => {
+    try {
+      const resp = await fetch('/api/tickets', { cache: 'no-store' });
+      if (!resp.ok) throw new Error('Failed to fetch tickets');
+      const data = await resp.json();
+      const found = Array.isArray(data) ? data.find((t: any) => t.id === ticketId || t.reportId === ticketId) : null;
+      if (found) {
+        setSelectedTicketDetail(found);
+      } else {
+        setSelectedTicketDetail({ id: ticketId, ticketNumber: ticketId, subject: '' });
+      }
+      setIsDetailOpen(true);
+    } catch (err) {
+      console.error('Error loading ticket detail:', err);
     }
   };
 
@@ -256,7 +279,7 @@ const AssignmentPage: FC = () => {
               ) : (
                 assignments.map((assignment) => (
                   <tr key={assignment.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-3 py-2">{assignment.id}</td>
+                    <td className="px-3 py-2">{assignment.ticketNumber || assignment.id}</td>
                     <td className="px-3 py-2">{assignment.reportId}</td>
                     <td className="px-3 py-2">{assignment.reportTitle}</td>
                     <td className="px-3 py-2">{assignment.technician}</td>
@@ -276,7 +299,7 @@ const AssignmentPage: FC = () => {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex space-x-2">
-                        <button className="text-blue-600 hover:text-blue-800 text-xs">
+                        <button onClick={() => handleViewDetail(assignment.reportId)} className="text-blue-600 hover:text-blue-800 text-xs">
                           Detail
                         </button>
                         {assignment.status === "waitingApproval" && (
@@ -306,7 +329,7 @@ const AssignmentPage: FC = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h2 className="font-semibold text-gray-800">{a.reportTitle}</h2>
-                    <p className="text-xs text-gray-500">ID Tugas: {a.id}</p>
+                    <p className="text-xs text-gray-500">ID Tugas: {a.ticketNumber || a.id}</p>
                     <p className="text-xs text-gray-500">Teknisi: {a.technician || '-'}</p>
                   </div>
                   <span
@@ -323,8 +346,8 @@ const AssignmentPage: FC = () => {
                     ? new Date(a.assignedAt).toLocaleDateString()
                     : "-"}
                 </p>
-                <div className="flex justify-end space-x-2">
-                  <button className="text-blue-600 hover:text-blue-800 text-xs">
+                  <div className="flex justify-end space-x-2">
+                  <button onClick={() => handleViewDetail(a.reportId)} className="text-blue-600 hover:text-blue-800 text-xs">
                     Detail
                   </button>
                   {a.status === "waitingApproval" && (
@@ -339,6 +362,14 @@ const AssignmentPage: FC = () => {
         </div>
       </div>
     </div>
+
+    {selectedTicketDetail && (
+      <TicketDetailModal
+        ticket={selectedTicketDetail}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
+    )}
 
     <AssignmentDialog
       isOpen={isAssignDialogOpen}

@@ -194,7 +194,6 @@ export default function TechnicianManagement() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keahlian</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Area</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shift</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Dibuat</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
             </tr>
@@ -202,11 +201,11 @@ export default function TechnicianManagement() {
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-4 text-gray-500">Loading...</td>
+                <td colSpan={6} className="text-center py-4 text-gray-500">Loading...</td>
               </tr>
             ) : technicians.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-4 text-gray-500">
+                <td colSpan={6} className="text-center py-4 text-gray-500">
                   Belum ada teknisi terdaftar
                 </td>
               </tr>
@@ -217,7 +216,6 @@ export default function TechnicianManagement() {
                   <td className="px-6 py-4">{technician.email}</td>
                   <td className="px-6 py-4">{technician.technicianProfile?.expertise || "-"}</td>
                   <td className="px-6 py-4">{technician.technicianProfile?.area || "-"}</td>
-                  <td className="px-6 py-4">{technician.technicianProfile?.shift || "-"}</td>
                   <td className="px-6 py-4">{new Date(technician.createdAt).toLocaleDateString()}</td>
                   <td className="px-6 py-4 flex gap-3">
                     <button onClick={() => handleEdit(technician)} className="text-blue-600 hover:text-blue-800">Edit</button>
@@ -244,7 +242,6 @@ export default function TechnicianManagement() {
               <div className="mt-2 text-sm text-gray-700 space-y-1">
                 <p><span className="font-medium">Keahlian:</span> {technician.technicianProfile?.expertise || "-"}</p>
                 <p><span className="font-medium">Area:</span> {technician.technicianProfile?.area || "-"}</p>
-                <p><span className="font-medium">Shift:</span> {technician.technicianProfile?.shift || "-"}</p>
                 <p><span className="font-medium">Dibuat:</span> {new Date(technician.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="flex justify-end gap-3 mt-3">
@@ -443,18 +440,7 @@ function Dialog({ title, onClose, onSubmit, formData, setFormData, isEdit = fals
             className="w-full border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded-lg p-2.5 text-sm"
           />
 
-          <select
-            value={formData.shift}
-            onChange={(e) =>
-              setFormData({ ...formData, shift: e.target.value })
-            }
-            className="w-full border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded-lg p-2.5 text-sm"
-          >
-            <option value="">Pilih Shift</option>
-            <option value="Pagi">Pagi</option>
-            <option value="Siang">Siang</option>
-            <option value="Malam">Malam</option>
-          </select>
+          
 
           {/* Tombol aksi */}
           <div className="flex justify-end gap-3 pt-3">

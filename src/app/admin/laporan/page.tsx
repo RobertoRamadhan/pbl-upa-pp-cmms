@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import AssignmentDialog from '../assignment/AssignmentDialog';
+// Assignment dialog removed from this page — assign action handled elsewhere
 import ReportDetailDialog from './ReportDetailDialog';
 import { formatDate } from '@/lib/utils/date';
 
@@ -16,10 +16,10 @@ interface Report {
 
 interface ApiTicket {
   id: string;
-  title?: string;
+  subject?: string;
   description?: string;
   status?: string;
-  reporter?: { name?: string } | null;
+  user?: { name?: string } | null;
   createdAt?: string;
 }
 
@@ -29,8 +29,7 @@ export default function ReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const [assignTicketId, setAssignTicketId] = useState<string | null>(null);
+  
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -52,14 +51,14 @@ export default function ReportPage() {
             status = 'pending';
           }
 
-          return {
-            id: t.id,
-            title: t.title || "Tanpa Judul",
-            description: t.description || "-",
-            status,
-            submittedBy: t.reporter?.name || "Tidak diketahui",
-            submittedAt: t.createdAt ?? '',
-          };
+            return {
+              id: t.id,
+              title: t.subject || "Tanpa Judul",
+              description: t.description || "-",
+              status,
+              submittedBy: t.user?.name || "Tidak diketahui",
+              submittedAt: t.createdAt ?? '',
+            };
         });
 
         setReports(formattedReports);
@@ -143,16 +142,7 @@ export default function ReportPage() {
                     >
                       Detail
                     </button>
-                    <button
-                      className="text-green-600 hover:text-green-800 mr-4"
-                      data-testid={`assign-${report.id}`}
-                      onClick={() => {
-                        setAssignTicketId(report.id);
-                        setIsAssignOpen(true);
-                      }}
-                    >
-                      Assign
-                    </button>
+                    
                     <button
                       className="text-red-600 hover:text-red-900"
                       data-testid={`delete-${report.id}`}
@@ -230,44 +220,13 @@ export default function ReportPage() {
                 >
                   Detail
                 </button>
-                <button
-                  className="text-green-600 hover:text-green-800 text-sm font-medium transition-colors duration-200"
-                  onClick={() => {
-                    setAssignTicketId(report.id);
-                    setIsAssignOpen(true);
-                  }}
-                >
-                  Assign
-                </button>
+                
               </div>
             </div>
           ))
         )}
       </div>
-      {/* Assignment dialog */}
-      <AssignmentDialog
-        isOpen={isAssignOpen}
-        onClose={() => {
-          setIsAssignOpen(false);
-          setAssignTicketId(null);
-        }}
-        ticketId={assignTicketId ?? ''}
-        onAssign={async (technicianId: string) => {
-          if (!assignTicketId) throw new Error('No ticket selected');
-          const res = await fetch('/api/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ticketId: assignTicketId, technicianId }),
-          });
-          if (!res.ok) {
-            const body = await res.json().catch(() => ({}));
-            throw new Error(body?.error || 'Failed to assign');
-          }
-          await res.json();
-          // update local report status optimistically
-          setReports((rs) => rs.map(r => r.id === assignTicketId ? { ...r, status: 'assigned' } : r));
-        }}
-      />
+      {/* Assign functionality removed from this page */}
       <ReportDetailDialog
         isOpen={!!selectedReport}
         report={selectedReport}
