@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface TechnicianProfile {
   id: string;
@@ -9,7 +9,8 @@ interface TechnicianProfile {
   email: string;
   phone?: string;
   department?: string;
-  joinDate: string;
+  joinDate?: string;
+  createdAt?: string;
   technicianProfile: {
     expertise: string;
     area: string;
@@ -17,288 +18,321 @@ interface TechnicianProfile {
   } | null;
 }
 
+interface TaskStats {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+}
+
 export default function TeknisiProfile() {
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false);
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState("");
+
   const [profile, setProfile] = useState<TechnicianProfile | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    expertise: '',
-    area: '',
-    shift: '',
+  const [taskStats, setTaskStats] = useState<TaskStats>({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
   });
 
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    expertise: "",
+    area: "",
+    shift: "",
+  });
+
+  /* =========================
+   * Helpers
+   * ========================= */
+  const getSession = () => {
+    const sessionStr = localStorage.getItem("user_session");
+    if (!sessionStr) return null;
+    try {
+      return JSON.parse(sessionStr);
+    } catch {
+      return null;
+    }
+  };
+
+  const formatDate = (raw?: string) => {
+    if (!raw) return "-";
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  /* =========================
+   * Fetching Data
+   * ========================= */
   useEffect(() => {
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const sessionStr = localStorage.getItem('user_session');
-      if (!sessionStr) {
-        router.push('/login');
+      setLoading(true);
+      setError("");
+
+      const session = getSession();
+      if (!session) {
+        router.push("/login");
         return;
       }
 
-      const session = JSON.parse(sessionStr);
-      const response = await fetch(`/api/admin/technicians/${session.id}`);
-      
-      if (!response.ok) {
-        throw new Error('Gagal mengambil profil');
-      }
+      const res = await fetch(`/api/admin/technicians/${session.id}`);
+      if (!res.ok) throw new Error("Gagal mengambil profil");
 
-      const data = await response.json();
+      const data: TechnicianProfile = await res.json();
       setProfile(data);
+
       setFormData({
         name: data.name,
         email: data.email,
-        phone: data.phone || '',
-        expertise: data.technicianProfile?.expertise || '',
-        area: data.technicianProfile?.area || '',
-        shift: data.technicianProfile?.shift || '',
+        phone: data.phone || "",
+        expertise: data.technicianProfile?.expertise || "",
+        area: data.technicianProfile?.area || "",
+        shift: data.technicianProfile?.shift || "",
       });
+
+      await fetchTaskStats(session.id);
     } catch (err) {
-      console.error('Error fetching profile:', err);
-      setError('Terjadi kesalahan saat memuat profil');
+      console.error(err);
+      setError("Terjadi kesalahan saat memuat profil");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  const fetchTaskStats = async (technicianId: string) => {
     try {
-      setError('');
-      const sessionStr = localStorage.getItem('user_session');
-      if (!sessionStr) {
-        router.push('/login');
+      const res = await fetch(`/api/assignments?technicianId=${technicianId}`, {
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        setTaskStats({ total: 0, pending: 0, inProgress: 0, completed: 0 });
         return;
       }
 
-      const session = JSON.parse(sessionStr);
-      const response = await fetch(`/api/admin/technicians/${session.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          expertise: formData.expertise,
-          area: formData.area,
-          shift: formData.shift,
-        }),
+      const assignments = await res.json();
+      if (!Array.isArray(assignments)) return;
+
+      const pending = assignments.filter(
+        (a: any) => a.status === "PENDING"
+      ).length;
+      const inProgress = assignments.filter(
+        (a: any) => a.status === "IN_PROGRESS"
+      ).length;
+      const completed = assignments.filter(
+        (a: any) => a.status === "COMPLETED"
+      ).length;
+
+      setTaskStats({
+        total: assignments.length,
+        pending,
+        inProgress,
+        completed,
+      });
+    } catch (err) {
+      console.error(err);
+      setTaskStats({ total: 0, pending: 0, inProgress: 0, completed: 0 });
+    }
+  };
+
+  /* =========================
+   * Actions
+   * ========================= */
+  const handleSave = async () => {
+    try {
+      setError("");
+
+      const session = getSession();
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+
+      // Build payload: teknisi hanya boleh memperbarui info personal/password.
+      const payload: any = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+      };
+
+      // Hanya admin yang bisa mengubah informasi teknisi (expertise/area/shift).
+      if (session.role === "admin") {
+        payload.expertise = formData.expertise;
+        payload.area = formData.area;
+        payload.shift = formData.shift;
+      }
+
+      const res = await fetch(`/api/admin/technicians/${session.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Gagal menyimpan profil');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Gagal menyimpan profil");
       }
 
       setIsEditing(false);
       await fetchProfile();
-      alert('Profil berhasil diperbarui');
-    } catch (err) {
-      console.error('Error saving profile:', err);
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan');
+      alert("Profil berhasil diperbarui");
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "Terjadi kesalahan saat menyimpan");
     }
   };
 
+  /* =========================
+   * Render States
+   * ========================= */
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 text-black flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-black">
+        <p className="text-lg">Loading...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 text-black flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg text-red-600">{error || 'Profil tidak ditemukan'}</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-black">
+        <p className="text-lg text-red-600">
+          {error || "Profil tidak ditemukan"}
+        </p>
       </div>
     );
   }
 
-  const joinDate = new Date(profile.joinDate).toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const joinDate = formatDate(profile.joinDate ?? profile.createdAt);
 
+  /* =========================
+   * UI
+   * ========================= */
   return (
     <div className="min-h-screen bg-gray-50 p-4 text-black">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header Profile dengan Background */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                <svg className="w-20 h-20 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+      <div className="mx-auto max-w-4xl">
+        <div className="overflow-hidden rounded-lg bg-white shadow-lg">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-lg sm:h-32 sm:w-32">
+                  <svg
+                    className="h-16 w-16 text-blue-600 sm:h-20 sm:w-20"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+                <div className="text-center sm:text-left">
+                  <h1 className="text-xl font-bold sm:text-2xl">
+                    {profile.name}
+                  </h1>
+                  <p className="text-blue-100">Teknisi</p>
+                </div>
               </div>
-              <div className="text-center">
-                <h1 className="text-2xl font-bold">{profile.name}</h1>
-                <p className="text-blue-100">Teknisi</p>
+
+              <div className="text-center sm:text-right">
+                <p className="text-sm">Bergabung sejak</p>
+                <p className="text-sm font-medium">{joinDate}</p>
               </div>
             </div>
           </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 gap-4 p-4 bg-blue-50">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">--</p>
-              <p className="text-sm text-black">Tugas Selesai</p>
-            </div>
+          {/* Statistik */}
+          <div className="grid grid-cols-2 gap-4 bg-blue-50 p-4 text-center sm:grid-cols-4">
+            <Stat
+              label="Total Tugas"
+              value={taskStats.total}
+              color="text-blue-600"
+            />
+            <Stat
+              label="Menunggu"
+              value={taskStats.pending}
+              color="text-orange-500"
+            />
+            <Stat
+              label="Sedang Dikerjakan"
+              value={taskStats.inProgress}
+              color="text-blue-500"
+            />
+            <Stat
+              label="Selesai"
+              value={taskStats.completed}
+              color="text-green-600"
+            />
           </div>
 
-          {/* Error Message */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 m-4 rounded">
+            <div className="m-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
               {error}
             </div>
           )}
 
-          {/* Informasi Profile */}
+          {/* Konten */}
           <div className="p-6">
-            <div className="grid gap-6">
-              <div className="border-b pb-4">
-                <h2 className="text-xl font-semibold mb-4">Informasi Personal</h2>
-                <div className="space-y-4">
-                  {isEditing ? (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-1">Nama Lengkap</label>
-                        <input
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => setFormData({...formData, name: e.target.value})}
-                          className="w-full p-2 border rounded-md border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({...formData, email: e.target.value})}
-                          className="w-full p-2 border rounded-md border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black mb-1">Nomor HP</label>
-                        <input
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                          className="w-full p-2 border rounded-md border-gray-300"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-black">Email</span>
-                        <span className="font-medium">{profile.email}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">Nomor HP</span>
-                        <span className="font-medium">{profile.phone || '-'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-black">Bergabung Sejak</span>
-                        <span className="font-medium">{joinDate}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Informasi Teknisi */}
-              <div className="border-b pb-4">
-                <h2 className="text-xl font-semibold mb-4">Informasi Teknisi</h2>
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Informasi Personal */}
+              <Section title="Informasi Personal">
                 {isEditing ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-black mb-1">Keahlian</label>
-                      <input
-                        type="text"
-                        value={formData.expertise}
-                        onChange={(e) => setFormData({...formData, expertise: e.target.value})}
-                        className="w-full p-2 border rounded-md border-gray-300"
-                        placeholder="Contoh: Jaringan, Hardware, Printer"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black mb-1">Area Penugasan</label>
-                      <input
-                        type="text"
-                        value={formData.area}
-                        onChange={(e) => setFormData({...formData, area: e.target.value})}
-                        className="w-full p-2 border rounded-md border-gray-300"
-                        placeholder="Contoh: Gedung A & B"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black mb-1">Shift Kerja</label>
-                      <select
-                        value={formData.shift}
-                        onChange={(e) => setFormData({...formData, shift: e.target.value})}
-                        className="w-full p-2 border rounded-md border-gray-300"
-                      >
-                        <option value="">Pilih Shift</option>
-                        <option value="Pagi">Pagi</option>
-                        <option value="Siang">Siang</option>
-                        <option value="Malam">Malam</option>
-                      </select>
-                    </div>
-                  </div>
+                  <InputGroup formData={formData} setFormData={setFormData} />
                 ) : (
-                  <div className="space-y-3">
-                    <div>
-                      <h3 className="text-black mb-2">Keahlian</h3>
-                      <p className="font-medium">{profile.technicianProfile?.expertise || '-'}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-black mb-2">Area Penugasan</h3>
-                      <p className="font-medium">{profile.technicianProfile?.area || '-'}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-black mb-2">Shift Kerja</h3>
-                      <p className="font-medium">{profile.technicianProfile?.shift || '-'}</p>
-                    </div>
-                  </div>
+                  <ReadOnlyPersonal profile={profile} joinDate={joinDate} />
                 )}
-              </div>
+              </Section>
 
-              <div className="border-b pb-4">
-                <h2 className="text-xl font-semibold mb-4">Keamanan</h2>
-                <button
-                  className="bg-gray-100 text-black px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
-                >
+              {/* Tampilkan Informasi Teknisi hanya saat tidak sedang mengedit,
+                  atau saat yang mengedit adalah admin */}
+              {!isEditing ? (
+                <Section title="Informasi Teknisi">
+                  <TechnicianView profile={profile} />
+                </Section>
+              ) : getSession()?.role === "admin" ? (
+                <Section title="Informasi Teknisi">
+                  <TechnicianForm
+                    formData={formData}
+                    setFormData={setFormData}
+                  />
+                </Section>
+              ) : null}
+
+              <Section title="Keamanan">
+                <button className="rounded-md bg-gray-100 px-4 py-2 hover:bg-gray-200">
                   Ubah Password
                 </button>
-              </div>
-
-              <div className="flex justify-end space-x-4">
+              </Section>
+ 
+              <div className="flex justify-end gap-2 md:col-span-2">
                 {isEditing ? (
                   <>
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 text-black hover:text-gray-900"
-                    >
-                      Batal
-                    </button>
+                    <button onClick={() => setIsEditing(false)}>Batal</button>
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                     >
                       Simpan Perubahan
                     </button>
@@ -306,7 +340,7 @@ export default function TeknisiProfile() {
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                   >
                     Edit Profil
                   </button>
@@ -316,6 +350,136 @@ export default function TeknisiProfile() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* =========================
+ * Small Components
+ * ========================= */
+function Stat({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div>
+      <p className={`text-2xl font-bold ${color}`}>{value}</p>
+      <p className="text-sm">{label}</p>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-b pb-4">
+      <h2 className="mb-4 text-xl font-semibold">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function InputGroup({ formData, setFormData }: any) {
+  return (
+    <div className="space-y-4">
+      <input
+        className="w-full rounded-md border p-2"
+        placeholder="Nama Lengkap"
+        value={formData.name}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+      />
+      <input
+        className="w-full rounded-md border p-2"
+        type="email"
+        placeholder="Email"
+        value={formData.email}
+        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+      />
+      <input
+        className="w-full rounded-md border p-2"
+        placeholder="Nomor HP"
+        value={formData.phone}
+        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+      />
+    </div>
+  );
+}
+
+function ReadOnlyPersonal({ profile, joinDate }: any) {
+  return (
+    <div className="space-y-3">
+      <Row label="Email" value={profile.email} />
+      <Row label="Nomor HP" value={profile.phone || "-"} />
+      <Row label="Bergabung Sejak" value={joinDate} />
+    </div>
+  );
+}
+
+function TechnicianForm({ formData, setFormData }: any) {
+  return (
+    <div className="space-y-4">
+      <input
+        className="w-full rounded-md border p-2"
+        placeholder="Keahlian"
+        value={formData.expertise}
+        onChange={(e) =>
+          setFormData({ ...formData, expertise: e.target.value })
+        }
+      />
+      <input
+        className="w-full rounded-md border p-2"
+        placeholder="Area Penugasan"
+        value={formData.area}
+        onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+      />
+      <select
+        className="w-full rounded-md border p-2"
+        value={formData.shift}
+        onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
+      >
+        <option value="">Pilih Shift</option>
+        <option value="Pagi">Pagi</option>
+        <option value="Siang">Siang</option>
+        <option value="Malam">Malam</option>
+      </select>
+    </div>
+  );
+}
+
+function TechnicianView({ profile }: any) {
+  return (
+    <div className="space-y-3">
+      <Row
+        label="Keahlian"
+        value={profile.technicianProfile?.expertise || "-"}
+      />
+      <Row
+        label="Area Penugasan"
+        value={profile.technicianProfile?.area || "-"}
+      />
+      <Row
+        label="Shift Kerja"
+        value={profile.technicianProfile?.shift || "-"}
+      />
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between">
+      <span>{label}</span>
+      <span className="font-medium">{value}</span>
     </div>
   );
 }
