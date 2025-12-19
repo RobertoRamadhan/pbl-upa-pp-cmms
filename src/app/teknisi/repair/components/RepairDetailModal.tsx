@@ -54,8 +54,8 @@ export default function RepairDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden" data-testid="repair-form">
+    <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="bg-white/95 backdrop-filter backdrop-blur-sm bg-clip-padding rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-xl" data-testid="repair-form">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-xl font-bold">Detail Laporan Perbaikan</h2>
           <button
