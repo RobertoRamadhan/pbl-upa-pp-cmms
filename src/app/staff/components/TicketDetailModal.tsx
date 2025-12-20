@@ -96,8 +96,8 @@ const TicketDetailModal: React.FC<TicketDetailProps> = ({ ticket, isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white flex justify-between items-start">
           <div>
@@ -106,7 +106,7 @@ const TicketDetailModal: React.FC<TicketDetailProps> = ({ ticket, isOpen, onClos
           </div>
           <button
             onClick={onClose}
-            className="text-2xl font-bold hover:text-gray-200"
+            className="text-2xl font-bold hover:text-gray-200 cursor-pointer"
           >
             ×
           </button>
@@ -238,7 +238,7 @@ const TicketDetailModal: React.FC<TicketDetailProps> = ({ ticket, isOpen, onClos
         <div className="bg-gray-50 px-6 py-4 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-semibold"
+            className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 cursor-pointer font-semibold"
           >
             Tutup
           </button>

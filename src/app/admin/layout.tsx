@@ -107,7 +107,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer ${
                   pathname === item.href
                     ? 'bg-blue-600 text-white shadow-lg'
                     : 'text-gray-200 hover:bg-blue-600/50'
@@ -129,7 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="border-t border-blue-600/30 bg-blue-800/50 p-4" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-700/50 transition-colors"
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-600/50 transition-colors cursor-pointer"
           >
             <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +157,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="mt-2 bg-blue-900/50 rounded-lg backdrop-blur-sm shadow-lg">
               <Link
                 href="/admin/profile"
-                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-200 hover:bg-blue-700/30 rounded-t-lg"
+                className="flex items-center space-x-3 px-4 py-3 text-sm text-gray-200 hover:bg-blue-600/50 rounded-t-lg cursor-pointer"
                 onClick={() => setIsDropdownOpen(false)}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +168,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-200 hover:bg-blue-700/30 rounded-b-lg"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-200 hover:bg-blue-600/50 rounded-b-lg cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 

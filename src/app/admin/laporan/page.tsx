@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import AssignmentDialog from '../assignment/AssignmentDialog';
+// Assignment dialog removed from this page — assign action handled elsewhere
 import ReportDetailDialog from './ReportDetailDialog';
 import { formatDate } from '@/lib/utils/date';
 
@@ -16,10 +16,10 @@ interface Report {
 
 interface ApiTicket {
   id: string;
-  title?: string;
+  subject?: string;
   description?: string;
   status?: string;
-  reporter?: { name?: string } | null;
+  user?: { name?: string } | null;
   createdAt?: string;
 }
 
@@ -29,8 +29,7 @@ export default function ReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const [assignTicketId, setAssignTicketId] = useState<string | null>(null);
+  
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -52,14 +51,14 @@ export default function ReportPage() {
             status = 'pending';
           }
 
-          return {
-            id: t.id,
-            title: t.title || "Tanpa Judul",
-            description: t.description || "-",
-            status,
-            submittedBy: t.reporter?.name || "Tidak diketahui",
-            submittedAt: t.createdAt ?? '',
-          };
+            return {
+              id: t.id,
+              title: t.subject || "Tanpa Judul",
+              description: t.description || "-",
+              status,
+              submittedBy: t.user?.name || "Tidak diketahui",
+              submittedAt: t.createdAt ?? '',
+            };
         });
 
         setReports(formattedReports);
@@ -97,13 +96,13 @@ export default function ReportPage() {
       <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
   <table className="min-w-full" data-testid="reports-table">
           <thead>
-            <tr className="bg-gray-50 border-b">
-              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Judul</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Pelapor</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Tanggal</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Aksi</th>
+            <tr className="bg-gray-100 text-gray-700 border-b">
+              <th className="px-3 py-2">ID</th>
+              <th className="px-3 py-2">Judul</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2">Pelapor</th>
+              <th className="px-3 py-2">Tanggal</th>
+              <th className="px-3 py-2">Aksi</th>
             </tr>
           </thead>
 
@@ -137,26 +136,20 @@ export default function ReportPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      className="text-blue-600 hover:text-blue-900 mr-4"
+                      className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm cursor-pointer mr-2"
                       data-testid={`detail-${report.id}`}
+                      aria-label={`Detail laporan ${report.id}`}
                       onClick={() => setSelectedReport(report)}
                     >
                       Detail
                     </button>
+
                     <button
-                      className="text-green-600 hover:text-green-800 mr-4"
-                      data-testid={`assign-${report.id}`}
-                      onClick={() => {
-                        setAssignTicketId(report.id);
-                        setIsAssignOpen(true);
-                      }}
-                    >
-                      Assign
-                    </button>
-                    <button
-                      className="text-red-600 hover:text-red-900"
+                      className={`px-3 py-1 rounded-md text-sm font-medium transition ${deletingId === report.id ? 'bg-red-400 text-white cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'}`}
                       data-testid={`delete-${report.id}`}
+                      aria-label={`Hapus laporan ${report.id}`}
                       onClick={async () => {
+                        if (deletingId === report.id) return;
                         // confirmation
                         if (!confirm('Hapus laporan ini?')) return;
                         try {
@@ -225,49 +218,18 @@ export default function ReportPage() {
 
               <div className="flex gap-3">
                 <button
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
+                  className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer text-sm font-medium transition-colors duration-200"
                   onClick={() => setSelectedReport(report)}
+                  aria-label={`Detail laporan ${report.id}`}
                 >
                   Detail
-                </button>
-                <button
-                  className="text-green-600 hover:text-green-800 text-sm font-medium transition-colors duration-200"
-                  onClick={() => {
-                    setAssignTicketId(report.id);
-                    setIsAssignOpen(true);
-                  }}
-                >
-                  Assign
                 </button>
               </div>
             </div>
           ))
         )}
       </div>
-      {/* Assignment dialog */}
-      <AssignmentDialog
-        isOpen={isAssignOpen}
-        onClose={() => {
-          setIsAssignOpen(false);
-          setAssignTicketId(null);
-        }}
-        ticketId={assignTicketId ?? ''}
-        onAssign={async (technicianId: string) => {
-          if (!assignTicketId) throw new Error('No ticket selected');
-          const res = await fetch('/api/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ticketId: assignTicketId, technicianId }),
-          });
-          if (!res.ok) {
-            const body = await res.json().catch(() => ({}));
-            throw new Error(body?.error || 'Failed to assign');
-          }
-          await res.json();
-          // update local report status optimistically
-          setReports((rs) => rs.map(r => r.id === assignTicketId ? { ...r, status: 'assigned' } : r));
-        }}
-      />
+      {/* Assign functionality removed from this page */}
       <ReportDetailDialog
         isOpen={!!selectedReport}
         report={selectedReport}

@@ -47,7 +47,7 @@ export default function ReportDetailDialog({ isOpen, report, onClose }: Props) {
               <p className="text-xs text-gray-500 mt-1">ID: {report.id}</p>
             </div>
             <button
-              className="text-gray-500 hover:text-gray-700 ml-4"
+              className="px-3 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 ml-4 cursor-pointer font-medium"
               onClick={onClose}
               aria-label="Tutup detail"
             >
