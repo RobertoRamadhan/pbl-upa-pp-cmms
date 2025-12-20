@@ -106,7 +106,7 @@ const TicketDetailModal: React.FC<TicketDetailProps> = ({ ticket, isOpen, onClos
           </div>
           <button
             onClick={onClose}
-            className="text-2xl font-bold hover:text-gray-200"
+            className="text-2xl font-bold hover:text-gray-200 cursor-pointer"
           >
             ×
           </button>
@@ -238,7 +238,7 @@ const TicketDetailModal: React.FC<TicketDetailProps> = ({ ticket, isOpen, onClos
         <div className="bg-gray-50 px-6 py-4 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-semibold"
+            className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 cursor-pointer font-semibold"
           >
             Tutup
           </button>

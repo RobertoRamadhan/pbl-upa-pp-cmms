@@ -168,7 +168,7 @@ export default function TechnicianManagement() {
         <h1 className="text-2xl font-semibold text-gray-900">Manajemen Teknisi</h1>
         <button
           onClick={() => setIsAddDialogOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 cursor-pointer transition-colors"
         >
           Tambah Teknisi
         </button>
@@ -188,14 +188,14 @@ export default function TechnicianManagement() {
       {/* 💻 Tampilan tabel untuk desktop */}
       <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-100 text-gray-700 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keahlian</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Area</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Dibuat</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+              <th className="px-6 py-3 ">Nama</th>
+              <th className="px-6 py-3 ">Email</th>
+              <th className="px-6 py-3 ">Keahlian</th>
+              <th className="px-6 py-3 ">Area</th>
+              <th className="px-6 py-3 ">Tanggal Dibuat</th>
+              <th className="px-6 py-3 ">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -218,8 +218,21 @@ export default function TechnicianManagement() {
                   <td className="px-6 py-4">{technician.technicianProfile?.area || "-"}</td>
                   <td className="px-6 py-4">{new Date(technician.createdAt).toLocaleDateString()}</td>
                   <td className="px-6 py-4 flex gap-3">
-                    <button onClick={() => handleEdit(technician)} className="text-blue-600 hover:text-blue-800">Edit</button>
-                    <button onClick={() => handleDelete(technician.id)} className="text-red-600 hover:text-red-800">Hapus</button>
+                    <button
+                      onClick={() => handleEdit(technician)}
+                      aria-label={`Edit ${technician.name}`}
+                      className="px-3 py-1.5 rounded-md bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 hover:shadow-sm cursor-pointer transition text-sm"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(technician.id)}
+                      aria-label={`Hapus ${technician.name}`}
+                      className="px-3 py-1.5 rounded-md bg-red-600 text-white hover:bg-red-700 cursor-pointer transition text-sm"
+                    >
+                      Hapus
+                    </button>
                   </td>
                 </tr>
               ))
@@ -245,8 +258,21 @@ export default function TechnicianManagement() {
                 <p><span className="font-medium">Dibuat:</span> {new Date(technician.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="flex justify-end gap-3 mt-3">
-                <button onClick={() => handleEdit(technician)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                <button onClick={() => handleDelete(technician.id)} className="text-red-600 hover:text-red-800 text-sm">Hapus</button>
+                <button
+                  onClick={() => handleEdit(technician)}
+                  aria-label={`Edit ${technician.name}`}
+                  className="px-3 py-1 rounded-md bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 cursor-pointer transition text-sm"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => handleDelete(technician.id)}
+                  aria-label={`Hapus ${technician.name}`}
+                  className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 cursor-pointer transition text-sm"
+                >
+                  Hapus
+                </button>
               </div>
             </div>
           ))
@@ -340,7 +366,7 @@ function Dialog({ title, onClose, onSubmit, formData, setFormData, isEdit = fals
         <button
           onClick={onClose}
           disabled={isSubmitting}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl disabled:opacity-50"
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 cursor-pointer text-xl disabled:opacity-50"
         >
           ✕
         </button>
@@ -448,14 +474,14 @@ function Dialog({ title, onClose, onSubmit, formData, setFormData, isEdit = fals
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition text-sm disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer transition text-sm disabled:opacity-50"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition text-sm disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition text-sm disabled:opacity-50"
             >
               {isSubmitting ? "Menyimpan..." : "Simpan"}
             </button>

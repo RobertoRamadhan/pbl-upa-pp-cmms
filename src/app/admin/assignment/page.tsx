@@ -156,11 +156,11 @@ const AssignmentPage: FC = () => {
             <table className="min-w-full border border-gray-200 text-sm">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="px-3 py-2 text-left font-medium">ID Tiket</th>
-                  <th className="px-3 py-2 text-left font-medium">Subjek</th>
-                  <th className="px-3 py-2 text-left font-medium">Prioritas</th>
-                  <th className="px-3 py-2 text-left font-medium">Tanggal Dibuat</th>
-                  <th className="px-3 py-2 text-left font-medium">Aksi</th>
+                  <th className="px-3 py-2 text-left">ID Tiket</th>
+                  <th className="px-3 py-2 text-left">Subjek</th>
+                  <th className="px-3 py-2 text-left">Prioritas</th>
+                  <th className="px-3 py-2 text-left">Tanggal Dibuat</th>
+                  <th className="px-3 py-2 text-left">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -186,11 +186,12 @@ const AssignmentPage: FC = () => {
                     </td>
                     <td className="px-3 py-2 border-t">
                       <button
-                        onClick={() => handleAssignClick(ticket.id)}
-                        className="bg-blue-600 text-white px-2.5 py-1 rounded text-xs hover:bg-blue-700 transition"
-                      >
-                        Tugaskan
-                      </button>
+                          onClick={() => handleAssignClick(ticket.id)}
+                          aria-label={`Tugaskan tiket ${ticket.id}`}
+                          className="px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition text-xs"
+                        >
+                          Tugaskan
+                        </button>
                     </td>
                   </tr>
                 ))}
@@ -232,7 +233,8 @@ const AssignmentPage: FC = () => {
                 <div className="flex justify-end">
                   <button
                     onClick={() => handleAssignClick(ticket.id)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition"
+                    aria-label={`Tugaskan tiket ${ticket.id}`}
+                    className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition text-xs"
                   >
                     Tugaskan
                   </button>
@@ -253,7 +255,7 @@ const AssignmentPage: FC = () => {
         <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full border border-gray-200 text-sm">
             <thead>
-              <tr className="bg-gray-100 text-gray-700">
+              <tr className="bg-gray-100 text-gray-700 border-b">
                 <th className="px-3 py-2">ID Tugas</th>
                 <th className="px-3 py-2">ID Tiket</th>
                 <th className="px-3 py-2">Subjek</th>
@@ -299,15 +301,19 @@ const AssignmentPage: FC = () => {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex space-x-2">
-                        <button onClick={() => handleViewDetail(assignment.reportId)} className="text-blue-600 hover:text-blue-800 text-xs">
-                          Detail
-                        </button>
-                        {assignment.status === "waitingApproval" && (
-                          <button className="text-green-600 hover:text-green-800 text-xs">
-                            Approve
+                          <button
+                            onClick={() => handleViewDetail(assignment.reportId)}
+                            aria-label={`Detail tiket ${assignment.reportId}`}
+                            className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition text-xs"
+                          >
+                            Detail
                           </button>
-                        )}
-                      </div>
+                          {assignment.status === "waitingApproval" && (
+                            <button className="text-green-600 hover:text-green-800 cursor-pointer text-xs">
+                              Approve
+                            </button>
+                          )}
+                        </div>
                     </td>
                   </tr>
                 ))
@@ -347,11 +353,15 @@ const AssignmentPage: FC = () => {
                     : "-"}
                 </p>
                   <div className="flex justify-end space-x-2">
-                  <button onClick={() => handleViewDetail(a.reportId)} className="text-blue-600 hover:text-blue-800 text-xs">
+                  <button
+                    onClick={() => handleViewDetail(a.reportId)}
+                    aria-label={`Detail tiket ${a.reportId}`}
+                    className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition text-xs"
+                  >
                     Detail
                   </button>
                   {a.status === "waitingApproval" && (
-                    <button className="text-green-600 hover:text-green-800 text-xs">
+                    <button className="text-green-600 hover:text-green-800 cursor-pointer text-xs">
                       Approve
                     </button>
                   )}
