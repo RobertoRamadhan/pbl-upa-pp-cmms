@@ -61,16 +61,16 @@ export default function ReportPage() {
 
           return {
             id: t.id,
-            title: t.subject || "Tanpa Judul",
-            description: t.description || "-",
-            category: t.category || "-",
-            severity: t.severity || "-",
-            priority: t.priority || "-",
+            title: (t as any).subject || t.ticketNumber || "Tanpa Judul",
+            description: (t as any).description || "-",
+            category: (t as any).category || "-",
+            severity: (t as any).severity || "-",
+            priority: (t as any).priority || "-",
             status,
-            submittedBy: t.user?.name || "Tidak diketahui",
-            submittedAt: t.createdAt ?? '',
-            location: t.location || "-",
-            assetCode: t.assetCode || "-",
+            submittedBy: (t as any).user?.name || "Tidak diketahui",
+            submittedAt: (t as any).createdAt ?? '',
+            location: (t as any).location || "-",
+            assetCode: (t as any).assetCode || "-",
           };
         });
 
