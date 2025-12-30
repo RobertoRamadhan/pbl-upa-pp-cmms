@@ -61,7 +61,7 @@ export default function ReportPage() {
 
           return {
             id: t.id,
-            title: (t as any).subject || t.ticketNumber || "Tanpa Judul",
+            title: (t as any).subject || (t as any).ticketNumber || "Tanpa Judul",
             description: (t as any).description || "-",
             category: (t as any).category || "-",
             severity: (t as any).severity || "-",
