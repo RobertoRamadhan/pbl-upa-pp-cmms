@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: Request,
+  { params }: RouteParams
 ) {
   try {
     // Await params (Next.js 15+ requirement)
