@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -171,8 +171,6 @@ model Ticket {
   assignment         Assignment?
   user               SystemUser           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
   maintenanceHistory MaintenanceHistory[]
-
-  @@index([reporterId], map: "Ticket_reporterId_fkey")
 }
 
 enum ticket_severity {
