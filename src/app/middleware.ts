@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.systemUser.findUnique({
       where: { id: userId, isActive: true }
     });
 

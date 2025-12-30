@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
 
   try {
     // Find the user based on session
-    const user = await prisma.user.findFirst({
+    const user = await prisma.systemUser.findFirst({
       where: {
         id: session,
         isActive: true

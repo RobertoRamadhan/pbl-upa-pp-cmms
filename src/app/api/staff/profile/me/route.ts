@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.systemUser.findUnique({
       where: {
         id: userId,
         isActive: true
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
         return obj;
       }, {} as any);
 
-    const user = await prisma.user.update({
+    const user = await prisma.systemUser.update({
       where: {
         id: userId,
         isActive: true

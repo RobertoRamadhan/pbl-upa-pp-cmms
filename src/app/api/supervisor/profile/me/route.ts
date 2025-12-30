@@ -71,7 +71,7 @@ export async function PUT(request: NextRequest) {
         return obj;
       }, {} as any);
 
-    const user = await prisma.user.update({
+    const user = await prisma.systemUser.update({
       where: {
         id: userId,
         isActive: true

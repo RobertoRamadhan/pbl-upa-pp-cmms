@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       }),
 
       // Technician performance
-      prisma.user.findMany({
+      prisma.systemUser.findMany({
         where: {
           role: 'TECHNICIAN',
           assignment_assignment_technicianIdTouser: {

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.systemUser.findUnique({
       where: {
         id: userId,
         isActive: true
