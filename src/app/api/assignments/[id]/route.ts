@@ -3,12 +3,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Handle both async and sync params (for Next.js 15+ compatibility)
-    const resolvedParams = await Promise.resolve(params);
-    const { id } = resolvedParams as { id: string };
+    // Await params (Next.js 15+ requirement)
+    const { id } = await params;
     console.log(`[ASSIGNMENT-API] Fetching assignment with ID: ${id}`);
 
     if (!id) {

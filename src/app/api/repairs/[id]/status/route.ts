@@ -2,9 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const assignmentId = params.id;
+    const { id } = await params;
+    const assignmentId = id;
     const body = await request.json();
     const { status, note, timeSpent, technicianId, action } = body;
 

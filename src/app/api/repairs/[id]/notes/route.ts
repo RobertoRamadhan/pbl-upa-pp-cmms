@@ -2,9 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const assignmentId = params.id;
+    const { id } = await params;
+    const assignmentId = id;
     const { note, technicianId } = await request.json();
 
     const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId } });
