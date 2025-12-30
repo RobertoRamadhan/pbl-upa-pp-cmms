@@ -22,6 +22,8 @@ export default function RepairDetailModal({
   const [newStatus, setNewStatus] = useState(repair.status);
   const [statusNote, setStatusNote] = useState('');
   const [newNote, setNewNote] = useState('');
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [imagePreview, setImagePreview] = useState<string[]>([]);
 
   const handleStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +50,64 @@ export default function RepairDetailModal({
       setNewNote('');
     } catch (error) {
       console.error('Error adding note:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setImagePreview((prev) => [...prev, event.target.result as string]);
+        }
+      };
+
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImagePreview = (index: number) => {
+    setImagePreview((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadImages = async () => {
+    if (imagePreview.length === 0) return;
+
+    setIsSubmitting(true);
+    try {
+      // Upload gambar ke server
+      const formData = new FormData();
+      
+      // Konversi preview ke blob
+      for (let i = 0; i < imagePreview.length; i++) {
+        const response = await fetch(imagePreview[i]);
+        const blob = await response.blob();
+        formData.append('images', blob, `image-${Date.now()}-${i}.png`);
+      }
+
+      const uploadResponse = await fetch('/api/repairs/upload-images', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        const data = await uploadResponse.json();
+        setUploadedImages((prev) => [...prev, ...data.urls]);
+        setImagePreview([]);
+        alert('Gambar berhasil diunggah');
+      } else {
+        alert('Gagal mengunggah gambar');
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Gagal mengunggah gambar');
     } finally {
       setIsSubmitting(false);
     }
@@ -97,10 +157,10 @@ export default function RepairDetailModal({
             <p className="text-black whitespace-pre-wrap">{repair.description}</p>
           </div>
 
-          {/* Images */}
+          {/* Images - Gambar Laporan */}
           {repair.images && repair.images.length > 0 && (
             <div className="mb-6">
-              <h3 className="font-medium text-black mb-2">Gambar</h3>
+              <h3 className="font-medium text-black mb-2">Gambar Laporan</h3>
               <div className="grid grid-cols-4 gap-4">
                 {repair.images.map((image, index) => (
                   <div key={index} className="relative aspect-square">
@@ -116,6 +176,76 @@ export default function RepairDetailModal({
             </div>
           )}
 
+          {/* Upload Gambar Bukti Pekerjaan */}
+          <div className="mb-6">
+            <h3 className="font-medium text-black mb-2">Upload Gambar Bukti Pekerjaan</h3>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full text-black"
+                disabled={isSubmitting || repair.status === 'completed'}
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Pilih satu atau lebih gambar untuk diunggah sebagai bukti pekerjaan
+              </p>
+
+              {/* Preview Gambar */}
+              {imagePreview.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-black mb-2">Preview ({imagePreview.length} gambar)</p>
+                  <div className="grid grid-cols-4 gap-4">
+                    {imagePreview.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImagePreview(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleUploadImages}
+                    disabled={isSubmitting}
+                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    {isSubmitting ? 'Mengunggah...' : 'Unggah Gambar'}
+                  </button>
+                </div>
+              )}
+
+              {/* Uploaded Images */}
+              {uploadedImages.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-green-600 mb-2">✓ {uploadedImages.length} gambar berhasil diunggah</p>
+                  <div className="grid grid-cols-4 gap-4">
+                    {uploadedImages.map((image, index) => (
+                      <div key={index} className="relative aspect-square">
+                        <Image
+                          src={image}
+                          alt={`Uploaded ${index + 1}`}
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Status Update Form */}
           <div className="mb-6">
             <h3 className="font-medium text-black mb-2">Update Status</h3>
@@ -124,8 +254,8 @@ export default function RepairDetailModal({
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value as RepairRequest['status'])}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isSubmitting}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={isSubmitting || repair.status === 'completed'}
                   data-testid="status-select"
                 >
                   <option value="pending">Menunggu</option>
@@ -133,15 +263,18 @@ export default function RepairDetailModal({
                   <option value="completed">Selesai</option>
                   <option value="rejected">Ditolak</option>
                 </select>
+                {repair.status === 'completed' && (
+                  <p className="text-sm text-green-600 mt-2">✓ Status sudah selesai dan tidak dapat diubah</p>
+                )}
               </div>
               <div>
                 <textarea
                   value={statusNote}
                   onChange={(e) => setStatusNote(e.target.value)}
                   placeholder="Tambahkan catatan untuk perubahan status..."
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={3}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || repair.status === 'completed'}
                   data-testid="status-note"
                 ></textarea>
               </div>
@@ -149,9 +282,9 @@ export default function RepairDetailModal({
                 <button
                   type="submit"
                   className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${
-                    isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
+                    isSubmitting || repair.status === 'completed' ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
-                  disabled={isSubmitting || newStatus === repair.status || !statusNote.trim()}
+                  disabled={isSubmitting || newStatus === repair.status || !statusNote.trim() || repair.status === 'completed'}
                   data-testid="submit-repair"
                 >
                   Update Status
