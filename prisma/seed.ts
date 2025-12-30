@@ -40,33 +40,6 @@ async function main() {
     });
     console.log('Admin created:', admin);
 
-    // Create technician user
-    const techPassword = await hash('tech123', 10);
-    const technician = await prisma.systemUser.create({
-      data: {
-        id: 'tech-1',
-        username: 'technician',
-        password: techPassword,
-        role: 'TECHNICIAN',
-        name: 'John Tech',
-        email: 'tech@example.com',
-        department: 'Maintenance',
-        updatedAt: new Date(),
-      },
-    });
-
-    // Create technician profile
-    const techProfile = await prisma.technicianProfile.create({
-      data: {
-        id: 'techprofile-1',
-        userId: technician.id,
-        expertise: 'Electronics',
-        area: 'Building A',
-        shift: 'Morning',
-      },
-    });
-    console.log('Technician and profile created:', { technician, techProfile });
-
     // Create supervisor user
     const supervisorPassword = await hash('supervisor123', 10);
     const supervisor = await prisma.systemUser.create({
@@ -82,22 +55,12 @@ async function main() {
       },
     });
     console.log('Supervisor created:', supervisor);
-
-    // Create sample ticket (using supervisor as reporter for demonstration)
-    const ticket = await prisma.ticket.create({
-      data: {
-        id: 'ticket-1',
-        ticketNumber: 'TIC001',
-        category: 'Hardware',
-        subject: 'Printer not working',
-        description: 'The printer in room 101 is not responding',
-        location: 'Room 101',
-        priority: 'MEDIUM',
-        reporterId: supervisor.id,
-        updatedAt: new Date(),
-      },
-    });
-    console.log('Sample ticket created:', ticket);
+    
+    console.log('\n✅ Database seeding complete!');
+    console.log('📝 Test credentials:');
+    console.log('   Admin: username "admin" / password "admin123"');
+    console.log('   Supervisor: username "supervisor" / password "supervisor123"');
+    console.log('\n💡 Create staff and technician users from Admin Dashboard');
 
   } catch (error) {
     console.error('Error seeding data:', error);

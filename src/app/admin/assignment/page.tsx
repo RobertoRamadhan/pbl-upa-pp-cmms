@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AssignmentDialog from "./AssignmentDialog";
+import AssignmentDetailModal from "./AssignmentDetailModal";
 import type { FC } from 'react';
 
 interface Assignment {
@@ -19,6 +20,8 @@ const AssignmentPage: FC = () => {
   const [loading, setLoading] = useState(true);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string>('');
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>('');
 
   const fetchData = async () => {
     try {
@@ -34,8 +37,8 @@ const AssignmentPage: FC = () => {
         id: assignment.id,
         reportId: assignment.ticket.id,
         reportTitle: assignment.ticket.subject,
-        technician: assignment.user_assignment_technicianIdTouser?.name,
-        assignedAt: assignment.createdAt,
+        technician: assignment.technician?.name,
+        assignedAt: assignment.assignedAt,
         status: assignment.status.toLowerCase(),
       }));
 
@@ -64,6 +67,12 @@ const AssignmentPage: FC = () => {
   const handleAssignClick = (ticketId: string) => {
     setSelectedTicketId(ticketId);
     setIsAssignDialogOpen(true);
+  };
+
+  const handleDetailClick = (assignmentId: string) => {
+    console.log(`[ASSIGNMENT-PAGE] Opening detail modal for assignment: ${assignmentId}`);
+    setSelectedAssignmentId(assignmentId);
+    setIsDetailModalOpen(true);
   };
 
   const handleAssign = async (technicianId: string) => {
@@ -276,7 +285,10 @@ const AssignmentPage: FC = () => {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex space-x-2">
-                        <button className="text-blue-600 hover:text-blue-800 text-xs">
+                        <button 
+                          onClick={() => handleDetailClick(assignment.id)}
+                          className="text-blue-600 hover:text-blue-800 text-xs"
+                        >
                           Detail
                         </button>
                         {assignment.status === "waitingApproval" && (
@@ -324,7 +336,10 @@ const AssignmentPage: FC = () => {
                     : "-"}
                 </p>
                 <div className="flex justify-end space-x-2">
-                  <button className="text-blue-600 hover:text-blue-800 text-xs">
+                  <button 
+                    onClick={() => handleDetailClick(a.id)}
+                    className="text-blue-600 hover:text-blue-800 text-xs"
+                  >
                     Detail
                   </button>
                   {a.status === "waitingApproval" && (
@@ -345,6 +360,12 @@ const AssignmentPage: FC = () => {
       onClose={() => setIsAssignDialogOpen(false)}
       ticketId={selectedTicketId}
       onAssign={handleAssign}
+    />
+
+    <AssignmentDetailModal
+      isOpen={isDetailModalOpen}
+      onClose={() => setIsDetailModalOpen(false)}
+      assignmentId={selectedAssignmentId}
     />
   </>
 );

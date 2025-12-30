@@ -36,7 +36,7 @@ interface Ticket {
   };
 }
 
-type TabType = 'OPEN' | 'PENDING' | 'CLOSE';
+type TabType = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -44,7 +44,7 @@ export default function TicketsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('OPEN');
+  const [activeTab, setActiveTab] = useState<TabType>('ASSIGNED');
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -128,11 +128,11 @@ export default function TicketsPage() {
 
   const getFilteredTickets = (tab: TabType) => {
     switch (tab) {
-      case 'OPEN':
+      case 'ASSIGNED':
         return tickets.filter(t => ['PENDING', 'ASSIGNED'].includes(t.status?.toUpperCase() || ''));
-      case 'PENDING':
+      case 'IN_PROGRESS':
         return tickets.filter(t => t.status?.toUpperCase() === 'IN_PROGRESS');
-      case 'CLOSE':
+      case 'COMPLETED':
         return tickets.filter(t => ['COMPLETED', 'CANCELLED'].includes(t.status?.toUpperCase() || ''));
       default:
         return tickets;
@@ -141,9 +141,9 @@ export default function TicketsPage() {
 
   const filteredTickets = getFilteredTickets(activeTab);
   const tabs: { label: string; value: TabType; count: number }[] = [
-    { label: 'OPEN', value: 'OPEN', count: getFilteredTickets('OPEN').length },
-    { label: 'PENDING', value: 'PENDING', count: getFilteredTickets('PENDING').length },
-    { label: 'CLOSE', value: 'CLOSE', count: getFilteredTickets('CLOSE').length },
+    { label: 'ASSIGNED', value: 'ASSIGNED', count: getFilteredTickets('ASSIGNED').length },
+    { label: 'IN_PROGRESS', value: 'IN_PROGRESS', count: getFilteredTickets('IN_PROGRESS').length },
+    { label: 'COMPLETED', value: 'COMPLETED', count: getFilteredTickets('COMPLETED').length },
   ];
 
   if (loading) {

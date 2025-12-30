@@ -40,7 +40,7 @@ export default function SupervisorAssignments() {
   }, []);
 
   // Hitung jumlah tiket per status
-  const todoCount = assignments.filter(a => a.status === 'TODO').length;
+  const todoCount = assignments.filter(a => a.status === 'PENDING').length;
   const inProgressCount = assignments.filter(a => a.status === 'IN_PROGRESS').length;
   const doneCount = assignments.filter(a => a.status === 'COMPLETED').length;
 
@@ -69,7 +69,7 @@ export default function SupervisorAssignments() {
           <button
             className="mt-2 px-4 py-1 bg-lime-400 text-black font-semibold rounded-full hover:bg-lime-500 transition-colors"
             onClick={() =>
-              setSelectedStatus(selectedStatus === 'TODO' ? null : 'TODO')
+              setSelectedStatus(selectedStatus === 'PENDING' ? null : 'PENDING')
             }
           >
             VIEW
@@ -84,7 +84,7 @@ export default function SupervisorAssignments() {
           <button
             className="mt-2 px-4 py-1 bg-lime-400 text-black font-semibold rounded-full hover:bg-lime-500 transition-colors"
             onClick={() =>
-              setSelectedStatus(selectedStatus === 'IN_PROGRESS' ? null : 'IN_PROGRESS')
+              setSelectedStatus(selectedStatus === 'COMPLETED' ? null : 'COMPLETED')
             }
           >
             VIEW
@@ -164,7 +164,7 @@ export default function SupervisorAssignments() {
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                         ${assignment.status === 'COMPLETED'
                           ? 'bg-green-100 text-green-800'
-                          : assignment.status === 'IN_PROGRESS'
+                          : assignment.status === 'PENDING'
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-gray-100 text-gray-800'
                         }`}

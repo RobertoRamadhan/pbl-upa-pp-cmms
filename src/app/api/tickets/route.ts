@@ -8,10 +8,24 @@ export async function GET(request: Request) {
     const status = searchParams.get('status')
     const userId = searchParams.get('userId')
 
+    // Calculate 7 days ago cutoff
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
     const tickets = await prisma.ticket.findMany({
       where: {
-        ...(status && { status: status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' }),
+        ...(status && { status: status as 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' }),
         ...(userId && { reporterId: userId }),
+        // Exclude completed tickets older than 7 days
+        OR: [
+          { NOT: { status: 'COMPLETED' } },
+          {
+            status: 'COMPLETED' as any,
+            completedAt: {
+              gte: sevenDaysAgo
+            }
+          }
+        ]
       },
       include: {
         user: {
@@ -86,7 +100,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create ticket
+    // Create ticket dengan status PENDING
     const ticket = await prisma.ticket.create({
       data: {
         id: `TCK-${Date.now()}`,
@@ -95,8 +109,8 @@ export async function POST(request: Request) {
         subject,
         description,
         location,
-        priority: priority as 'LOW' | 'MEDIUM' | 'HIGH',
-        status: 'PENDING',
+        priority: priority as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
+        status: 'PENDING' as any,
         reporterId: user.id,
         assetCode,
         severity: severity as 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL' || 'NORMAL',

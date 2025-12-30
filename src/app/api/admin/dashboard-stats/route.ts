@@ -55,11 +55,28 @@ export async function GET(request: NextRequest) {
     // Get current statistics
     console.log('Fetching current ticket statistics...');
     
+    // Calculate 7 days ago cutoff
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
     // Get current statistics with error handling
     let ticketStats;
     try {
       ticketStats = await prisma.ticket.groupBy({
         by: ['status'],
+        where: {
+          OR: [
+            // Include all non-completed tickets
+            { NOT: { status: 'COMPLETED' } },
+            // Include completed tickets from last 7 days only
+            {
+              status: 'COMPLETED' as any,
+              completedAt: {
+                gte: sevenDaysAgo
+              }
+            }
+          ]
+        },
         _count: {
           status: true
         }
@@ -84,7 +101,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Calculate totals
+    // Calculate totals dengan status enum asli
     const pending = ticketStats.find(stat => stat.status === 'PENDING')?._count.status || 0;
     const inProgress = ticketStats.find(stat => stat.status === 'IN_PROGRESS')?._count.status || 0;
     const completed = ticketStats.find(stat => stat.status === 'COMPLETED')?._count.status || 0;
@@ -141,7 +158,6 @@ export async function GET(request: NextRequest) {
     console.log(`Found ${recentAssignments.length} recent assignments`);
 
       // Get monthly statistics for the last 6 months
-    const now = new Date();
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
     interface MonthlyStats {
@@ -151,39 +167,23 @@ export async function GET(request: NextRequest) {
       completed: number;
     }
 
-    // Get aggregated monthly data
-    const monthlyTickets = await prisma.ticket.groupBy({
-      by: ['status', 'createdAt'],
-      where: {
-        AND: [
-          {
-            createdAt: {
-              gte: sixMonthsAgo
-            }
-          },
-          {
-            NOT: {
-              status: 'CANCELLED'
-            }
-          }
-        ]
-      },
-      _count: {
-        status: true
-      }
-    });
-
-    console.log('Monthly aggregated data:', monthlyTickets);
-
-    // Get detailed tickets for monthly breakdown
+    // Get detailed tickets for monthly breakdown - exclude old completed tickets and CANCELLED
     const tickets = await prisma.ticket.findMany({
       where: {
         createdAt: {
           gte: sixMonthsAgo
         },
-        NOT: {
-          status: 'CANCELLED'
-        }
+        OR: [
+          // Include all non-completed tickets
+          { NOT: { status: 'COMPLETED' } },
+          // Include completed tickets from last 7 days only
+          {
+            status: 'COMPLETED' as any,
+            completedAt: {
+              gte: sevenDaysAgo
+            }
+          }
+        ]
       },
       select: {
         status: true,
@@ -196,7 +196,9 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log(`Found ${tickets.length} tickets for the last 6 months`);
+    // Filter out CANCELLED in-memory
+    const activeTickets = tickets.filter(t => t.status !== 'CANCELLED');
+    console.log(`Found ${activeTickets.length} active tickets for the last 6 months`);
 
     // Initialize monthly stats
     const monthlyStats: MonthlyStats[] = [];
@@ -210,8 +212,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Process tickets into monthly stats
-    tickets.forEach(ticket => {
+    // Process tickets into monthly stats dengan status enum asli
+    activeTickets.forEach(ticket => {
       const ticketMonth = new Date(ticket.createdAt).toLocaleString('id-ID', { 
         month: 'short', 
         year: 'numeric' 
@@ -221,6 +223,9 @@ export async function GET(request: NextRequest) {
       if (monthStat) {
         switch (ticket.status) {
           case 'PENDING':
+            monthStat.pending++;
+            break;
+          case 'ASSIGNED':
             monthStat.pending++;
             break;
           case 'IN_PROGRESS':
@@ -264,17 +269,18 @@ export async function GET(request: NextRequest) {
       },
       recentAssignments: formattedAssignments,
       monthlyStats: monthlyStatsFormatted.reverse(),
-      ticketCategories: await prisma.ticket.groupBy({
-        by: ['category'],
-        _count: {
-          category: true
-        },
-        where: {
-          NOT: {
-            status: 'CANCELLED'
-          }
+      ticketCategories: activeTickets.reduce((acc, ticket) => {
+        const existing = acc.find(c => c.category === ticket.category);
+        if (existing) {
+          existing._count.category++;
+        } else {
+          acc.push({
+            category: ticket.category,
+            _count: { category: 1 }
+          });
         }
-      })
+        return acc;
+      }, [] as Array<{ category: string; _count: { category: number } }>)
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

@@ -82,14 +82,18 @@ export default function RepairDetailModal({
 
     setIsSubmitting(true);
     try {
-      // Upload gambar ke server
-      const formData = new FormData();
-      
-      // Konversi preview ke blob
+      const files: File[] = [];
       for (let i = 0; i < imagePreview.length; i++) {
         const response = await fetch(imagePreview[i]);
         const blob = await response.blob();
-        formData.append('images', blob, `image-${Date.now()}-${i}.png`);
+        const file = new File([blob], `image-${Date.now()}-${i}.png`, { type: 'image/png' });
+        files.push(file);
+      }
+
+      const formData = new FormData();
+      formData.append('assignmentId', repair.id);
+      for (const file of files) {
+        formData.append('images', file);
       }
 
       const uploadResponse = await fetch('/api/repairs/upload-images', {
@@ -97,17 +101,18 @@ export default function RepairDetailModal({
         body: formData,
       });
 
-      if (uploadResponse.ok) {
-        const data = await uploadResponse.json();
-        setUploadedImages((prev) => [...prev, ...data.urls]);
-        setImagePreview([]);
-        alert('Gambar berhasil diunggah');
-      } else {
-        alert('Gagal mengunggah gambar');
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.details || errorData.error || 'Gagal mengunggah gambar');
       }
+
+      const data = await uploadResponse.json();
+      setUploadedImages(data.urls || []);
+      setImagePreview([]);
+      alert('Gambar berhasil diunggah. Data akan dikirim ke admin dan supervisor untuk verifikasi.');
     } catch (error) {
       console.error('Error uploading images:', error);
-      alert('Gagal mengunggah gambar');
+      alert(`Gagal mengunggah gambar: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }

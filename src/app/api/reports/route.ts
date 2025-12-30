@@ -58,7 +58,7 @@ export async function GET(request: Request) {
         // Generate maintenance history report
         data = await prisma.ticket.findMany({
           where: {
-            status: 'COMPLETED',
+            status: 'COMPLETED' as any,
             ...(Object.keys(dateRange).length > 0 && {
               completedAt: dateRange
             })

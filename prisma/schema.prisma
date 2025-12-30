@@ -74,6 +74,12 @@ model Assignment {
   endTime      DateTime?
   assignedAt   DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+  completionEvidenceImages String? // JSON array of image URLs
+  completionNotes String?
+  verificationStatus verification_status @default(PENDING)
+  verifiedBy   String?
+  verifiedAt   DateTime?
+  needsVerification Boolean       @default(false) // true jika HIGH/URGENT/CRITICAL priority
   assignedBy   SystemUser        @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
   technician   SystemUser        @relation("AssignedTo", fields: [technicianId], references: [id], onDelete: Cascade)
   ticket       Ticket            @relation(fields: [ticketId], references: [id], onDelete: Cascade)
@@ -216,6 +222,12 @@ enum ticket_status {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum verification_status {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum MaintenanceType {

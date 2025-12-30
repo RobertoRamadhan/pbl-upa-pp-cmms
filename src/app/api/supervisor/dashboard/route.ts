@@ -3,8 +3,24 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    // Fetch total tickets
-    const totalTickets = await prisma.ticket.count()
+    // Calculate 7 days ago cutoff
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Fetch total tickets (excluding completed tickets older than 7 days)
+    const totalTickets = await prisma.ticket.count({
+      where: {
+        OR: [
+          { NOT: { status: 'COMPLETED' } },
+          {
+            status: 'COMPLETED' as any,
+            completedAt: {
+              gte: sevenDaysAgo
+            }
+          }
+        ]
+      }
+    })
 
     // Fetch active assignments
     const activeAssignments = await prisma.assignment.count({
@@ -13,19 +29,23 @@ export async function GET() {
       }
     })
 
-    // Fetch completed tasks
+    // Fetch completed tasks from last 7 days
     const completedTasks = await prisma.assignment.count({
       where: {
-        status: 'COMPLETED'
+        status: 'COMPLETED',
+        endTime: {
+          gte: sevenDaysAgo
+        }
       }
     })
 
-    // Calculate average completion time (in hours)
+    // Calculate average completion time (in hours) for last 7 days
     const completedAssignments = await prisma.assignment.findMany({
       where: {
         status: 'COMPLETED',
         endTime: {
-          not: null
+          not: null,
+          gte: sevenDaysAgo
         },
         startTime: {
           not: null

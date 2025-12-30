@@ -5,26 +5,20 @@ import { useRouter } from 'next/navigation';
 
 interface TicketForm {
   category: string;
-  location: string;
   subject: string;
   description: string;
-  priority: 'low' | 'medium' | 'high';
-  severity: 'low' | 'normal' | 'high' | 'critical';
-  assetCode: string;
-  notes: string;
+  location: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
 export default function NewTicket() {
   const router = useRouter();
   const [formData, setFormData] = useState<TicketForm>({
     category: '',
-    location: '',
     subject: '',
     description: '',
-    priority: 'medium',
-    severity: 'normal',
-    assetCode: '',
-    notes: ''
+    location: '',
+    priority: 'MEDIUM'
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,10 +44,12 @@ export default function NewTicket() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
-          status: 'PENDING',
-          priority: formData.priority.toUpperCase(),
-          severity: formData.severity.toUpperCase()
+          category: formData.category,
+          subject: formData.subject,
+          description: formData.description,
+          location: formData.location,
+          priority: formData.priority,
+          status: 'PENDING'
         })
       });
 
@@ -62,21 +58,8 @@ export default function NewTicket() {
       }
 
       const data = await response.json();
-      
       alert('Tiket berhasil dibuat dengan nomor: ' + data.ticketNumber);
       router.push('/staff/tickets');
-      
-      // Reset form
-      setFormData({
-        category: '',
-        location: '',
-        subject: '',
-        description: '',
-        priority: 'medium',
-        severity: 'normal',
-        assetCode: '',
-        notes: ''
-      });
     } catch (error) {
       console.error('Error creating ticket:', error);
       alert('Gagal membuat tiket. Silakan coba lagi.');
@@ -86,107 +69,56 @@ export default function NewTicket() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8 text-black">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-100 p-6 text-black">
+      <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-2xl font-bold mb-6">Buat Tiket Baru</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Row 1: Category and Priority */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Kategori Masalah <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="w-full p-2 border rounded-md"
-                  required
-                >
-                  <option value="">Pilih Kategori</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Prioritas <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData({...formData, priority: e.target.value as 'low' | 'medium' | 'high'})}
-                  className="w-full p-2 border rounded-md"
-                  required
-                >
-                  <option value="low">Rendah</option>
-                  <option value="medium">Sedang</option>
-                  <option value="high">Tinggi</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Row 2: Severity and Location */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Tingkat Keparahan <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.severity}
-                  onChange={(e) => setFormData({...formData, severity: e.target.value as 'low' | 'normal' | 'high' | 'critical'})}
-                  className="w-full p-2 border rounded-md"
-                  required
-                >
-                  <option value="low">Rendah</option>
-                  <option value="normal">Normal</option>
-                  <option value="high">Tinggi</option>
-                  <option value="critical">Kritis</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Lokasi <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  placeholder="Contoh: Ruang 101, Lab Komputer A"
-                  className="w-full p-2 border rounded-md"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Row 3: Asset Code */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Category */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Kode Aset (Opsional)
+                Kategori <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Pilih Kategori</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Lokasi <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                value={formData.assetCode}
-                onChange={(e) => setFormData({...formData, assetCode: e.target.value})}
-                placeholder="Contoh: AST-001"
-                className="w-full p-2 border rounded-md"
+                value={formData.location}
+                onChange={(e) => setFormData({...formData, location: e.target.value})}
+                placeholder="Contoh: Ruang 101"
+                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
               />
             </div>
 
             {/* Subject */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Subjek <span className="text-red-500">*</span>
+                Judul <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.subject}
                 onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                placeholder="Ringkasan singkat masalah"
-                className="w-full p-2 border rounded-md"
+                placeholder="Contoh: Printer tidak bisa print"
+                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
@@ -199,44 +131,53 @@ export default function NewTicket() {
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Jelaskan detail masalah yang Anda temui..."
-                className="w-full p-2 border rounded-md h-32"
+                placeholder="Jelaskan masalah yang Anda alami..."
+                className="w-full p-2 border rounded-md h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
 
-            {/* Additional Notes */}
+            {/* Priority */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Catatan Tambahan (Opsional)
+                Prioritas <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                placeholder="Informasi tambahan yang mungkin membantu teknisi..."
-                className="w-full p-2 border rounded-md h-24"
-              />
+              <div className="flex gap-4">
+                {['LOW', 'MEDIUM', 'HIGH'].map((p) => (
+                  <label key={p} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="priority"
+                      value={p}
+                      checked={formData.priority === p}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH'})}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">{p === 'LOW' ? 'Rendah' : p === 'MEDIUM' ? 'Sedang' : 'Tinggi'}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 rounded-lg text-gray-700 bg-gray-300 hover:bg-gray-400"
+                className="px-6 py-2 rounded-lg text-gray-700 bg-gray-300 hover:bg-gray-400 font-medium"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg text-white ${
+                className={`px-6 py-2 rounded-lg text-white font-medium ${
                   isSubmitting 
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
-                {isSubmitting ? 'Membuat Tiket...' : 'Buat Tiket'}
+                {isSubmitting ? 'Membuat...' : 'Buat Tiket'}
               </button>
             </div>
           </form>

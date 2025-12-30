@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       // Completed tickets in range
       prisma.ticket.count({
         where: {
-          status: 'COMPLETED',
+          status: 'COMPLETED' as any,
           completedAt: {
             gte: startDate,
             lte: now

@@ -54,12 +54,43 @@ export async function POST(request: Request) {
       assignedBy = admin.id;
     }
 
+    // Get ticket to check priority/severity
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      select: { priority: true, severity: true },
+    });
+
+    if (!ticket) {
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
+    }
+
+    // Determine if needs supervisor verification
+    // True jika priority HIGH/URGENT atau severity HIGH/CRITICAL
+    const needsVerification = 
+      ticket.priority === 'HIGH' || 
+      ticket.priority === 'URGENT' || 
+      ticket.severity === 'HIGH' || 
+      ticket.severity === 'CRITICAL';
+
+    // Generate assignment ID: ASG-####, or ASG-###[LETTER] if >9999
+    const randomNum = Math.floor(Math.random() * 10000);
+    let assignmentId: string;
+    if (randomNum <= 9999) {
+      assignmentId = `ASG-${String(randomNum).padStart(4, '0')}`;
+    } else {
+      const num = randomNum % 10000;
+      const letter = String.fromCharCode(65 + Math.floor(randomNum / 10000) % 26); // A-Z
+      assignmentId = `ASG-${String(num).padStart(3, '0')}${letter}`;
+    }
+
     const assignment = await prisma.assignment.create({
       data: {
+        id: assignmentId,
         ticketId,
         technicianId,
         assignedById: assignedBy,
         notes,
+        needsVerification,
       },
       include: {
         ticket: true,
@@ -71,10 +102,10 @@ export async function POST(request: Request) {
       },
     })
 
-    // Update ticket status
+    // Update ticket status ke ASSIGNED
     await prisma.ticket.update({
       where: { id: ticketId },
-      data: { status: 'ASSIGNED' },
+      data: { status: 'ASSIGNED' as any },
     })
 
     // Create notification for the technician
