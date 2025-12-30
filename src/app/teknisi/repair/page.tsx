@@ -270,7 +270,7 @@ export default function RepairPage() {
                       className="text-blue-600 hover:text-blue-900 font-semibold"
                       data-testid="detail-btn"
                     >
-                      Detail
+                      Update Laporan
                     </button>
                   </td>
                 </tr>
@@ -292,13 +292,23 @@ export default function RepairPage() {
               setShowModal(false);
               setSelectedRepair(null);
             }}
-            onStatusUpdate={async (status, note) => {
-              await fetch(`/api/repairs/${selectedRepair.id}/status`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status, note }),
-              });
-              fetchRepairs();
+            onStatusUpdate={async (status, note, images) => {
+              const res = await fetch(
+                `/api/repairs/${selectedRepair.id}/status`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ status, note, images }),
+                }
+              );
+              if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || "Failed to update status");
+              }
+              await fetchRepairs();
+              // Close modal after successful update so user sees refreshed list
+              setShowModal(false);
+              setSelectedRepair(null);
             }}
             onAddNote={async (note) => {
               await fetch(`/api/repairs/${selectedRepair.id}/notes`, {

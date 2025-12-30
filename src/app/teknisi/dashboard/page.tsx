@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import RepairDetailModal from "../repair/components/RepairDetailModal";
+import { RepairRequest } from "../repair/types";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -119,6 +121,12 @@ export default function TeknisiDashboard() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [startingTaskId, setStartingTaskId] = useState<string | null>(null);
 
+  // Modal state for opening repair detail from dashboard
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRepair, setSelectedRepair] = useState<RepairRequest | null>(
+    null
+  );
+
   const fetchAssignments = async (technicianId: string) => {
     try {
       const res = await fetch(`/api/repairs?technicianId=${technicianId}`, {
@@ -152,12 +160,60 @@ export default function TeknisiDashboard() {
     return { label: s.replace(/_/g, " "), nextStatus: null, enabled: false };
   };
 
+  // Open the repair completion modal for finalization
+  async function openCompletionModal(assignmentId: string) {
+    // Try to find the full repair object in current assignments
+    const found = assignments.find((r) => r.id === assignmentId) as unknown as
+      | RepairRequest
+      | undefined;
+    if (found) {
+      setSelectedRepair(found);
+      setShowModal(true);
+      return;
+    }
+
+    // Fallback: re-fetch repairs and look for the id
+    try {
+      const userSessionStr = localStorage.getItem("user_session");
+      const userSession = userSessionStr
+        ? (JSON.parse(userSessionStr) as UserSession)
+        : null;
+      const res = await fetch(
+        userSession?.id
+          ? `/api/repairs?technicianId=${userSession.id}`
+          : `/api/repairs`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) return alert("Gagal membuka modal, coba lagi");
+      const data = await res.json();
+      const fresh = Array.isArray(data)
+        ? data.find((d: any) => d.id === assignmentId)
+        : undefined;
+      if (fresh) {
+        setSelectedRepair(fresh as RepairRequest);
+        setShowModal(true);
+        return;
+      }
+      alert("Data tugas tidak ditemukan");
+    } catch (err) {
+      console.error("Error fetching repair for modal", err);
+      alert("Gagal membuka modal, coba lagi");
+    }
+  }
+
   const updateTaskStatus = async (
     assignmentId: string,
     nextStatus: string | null,
     note?: string
   ) => {
     if (!nextStatus) return;
+
+    // If attempting to complete a task directly, open the completion modal instead
+    if (nextStatus === "completed") {
+      openCompletionModal(assignmentId);
+      return;
+    }
+
     try {
       setStartingTaskId(assignmentId);
       const res = await fetch(`/api/repairs/${assignmentId}/status`, {
@@ -170,9 +226,12 @@ export default function TeknisiDashboard() {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error("Failed to update task status", err);
-        alert("Gagal memperbarui status tugas");
+        const err = await res.json().catch(async () => {
+          const text = await res.text().catch(() => "");
+          return { error: text || "Unknown error" };
+        });
+        console.error("Failed to update task status", res.status, err);
+        alert(err?.error || "Gagal memperbarui status tugas");
         setStartingTaskId(null);
         return;
       }
