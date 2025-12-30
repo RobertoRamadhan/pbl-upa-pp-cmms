@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update verification status
-    let updateData: any = {
+    const updateData: any = {
       verificationStatus: action === 'APPROVE' ? 'APPROVED' : 'REJECTED',
       verifiedAt: new Date(),
       verifiedBy: 'supervisor', // In production, get from session/auth

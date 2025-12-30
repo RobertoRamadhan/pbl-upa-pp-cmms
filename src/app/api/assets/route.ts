@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const status = searchParams.get('status')
     const needsMaintenance = searchParams.get('needsMaintenance')
 
-    let where: any = {}
+    const where: Record<string, any> = {}
     
     if (category) where.category = category
     if (location) where.location = location

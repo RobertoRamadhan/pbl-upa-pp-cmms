@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     
     // Jika needsVerification = false, langsung mark as COMPLETED
     // Jika needsVerification = true, tetap PENDING, tunggu supervisor approval
-    let ticketStatus = existingAssignment.needsVerification ? 'IN_PROGRESS' : 'COMPLETED';
+    const ticketStatus = existingAssignment.needsVerification ? 'IN_PROGRESS' : 'COMPLETED';
     
     const assignment = await prisma.assignment.update({
       where: { id: assignmentId },

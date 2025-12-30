@@ -8,7 +8,7 @@ export async function GET(request: Request) {
 
     // Calculate date range
     const now = new Date()
-    let startDate = new Date()
+    const startDate = new Date()
     switch (range) {
       case 'week':
         startDate.setDate(now.getDate() - 7)

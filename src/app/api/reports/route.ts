@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
 // Utility untuk generate report dalam format PDF
-async function generatePDF(data: any, template: string) {
+async function generatePDF(data: any) {
   // TODO: Implement PDF generation using library seperti PDFKit
   return Buffer.from('PDF content')
 }

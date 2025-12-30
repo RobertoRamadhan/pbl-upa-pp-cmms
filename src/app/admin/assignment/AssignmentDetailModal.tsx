@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { formatDate } from '@/lib/utils/date';
 
 interface AssignmentDetail {
@@ -47,9 +46,6 @@ export default function AssignmentDetailModal({ isOpen, onClose, assignmentId }:
   const [error, setError] = useState<string | null>(null);
   const [completionImages, setCompletionImages] = useState<string[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [verificationNotes, setVerificationNotes] = useState('');
-  const [verifyingStatus, setVerifyingStatus] = useState<'idle' | 'approving' | 'rejecting'>('idle');
-  const [verificationDone, setVerificationDone] = useState(false);
 
   useEffect(() => {
     if (isOpen && assignmentId) {
