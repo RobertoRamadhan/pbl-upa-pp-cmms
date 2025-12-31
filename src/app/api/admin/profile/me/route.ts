@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Fixed: Use systemUser instead of user
     const user = await prisma.systemUser.findUnique({
       where: {
         id: userId,
