@@ -115,7 +115,6 @@ export default function ReportPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Prioritas</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Keparahan</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Lokasi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Kode Aset</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Pelapor</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Tanggal</th>
@@ -126,7 +125,7 @@ export default function ReportPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {reports.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center py-6 text-gray-500 italic">
+                <td colSpan={9} className="text-center py-6 text-gray-500 italic">
                   Belum ada laporan.
                 </td>
               </tr>
@@ -155,7 +154,6 @@ export default function ReportPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{report.location}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-black font-mono">{report.assetCode}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{report.submittedBy}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -250,9 +248,6 @@ export default function ReportPage() {
                 </div>
                 <div className="text-gray-600">
                   <span className="font-medium">Lokasi:</span> {report.location}
-                </div>
-                <div className="text-gray-600">
-                  <span className="font-medium">Aset:</span> {report.assetCode}
                 </div>
               </div>
 
