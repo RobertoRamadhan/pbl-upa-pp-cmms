@@ -3,12 +3,6 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    // Debug info
-    console.log('Profile API - Request received');
-    console.log('URL:', request.url);
-    console.log('Method:', request.method);
-    console.log('Headers:', Object.fromEntries(request.headers.entries()));
-
     const userId = request.headers.get('x-user-id');
     if (!userId) {
       return NextResponse.json(
@@ -42,7 +36,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error('Error fetching profile:', error);
     return NextResponse.json(
       { error: 'Failed to fetch profile' },
       { status: 500 }
@@ -93,7 +86,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error('Error updating profile:', error);
     return NextResponse.json(
       { error: 'Failed to update profile' },
       { status: 500 }

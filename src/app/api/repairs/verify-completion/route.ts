@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
       assignment,
     });
   } catch (error) {
-    console.error('Error verifying completion:', error);
     return NextResponse.json(
       { error: 'Gagal memverifikasi penyelesaian' },
       { status: 500 }

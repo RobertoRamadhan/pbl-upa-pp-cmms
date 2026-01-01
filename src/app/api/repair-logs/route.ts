@@ -70,7 +70,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(formattedLogs);
   } catch (error) {
-    console.error("Error fetching repair logs:", error);
     return NextResponse.json(
       { error: "Failed to fetch repair logs" },
       { status: 500 }

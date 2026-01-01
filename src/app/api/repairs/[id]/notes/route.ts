@@ -28,7 +28,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     return NextResponse.json(repairLog);
   } catch (error) {
-    console.error('Error creating repair note:', error);
     return NextResponse.json({ error: 'Failed to create note' }, { status: 500 });
   }
 }

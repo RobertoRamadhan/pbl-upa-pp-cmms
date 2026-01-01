@@ -67,7 +67,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(sanitizedTickets)
   } catch (error) {
-    console.error('Error fetching tickets:', error)
     return NextResponse.json(
       { error: 'Failed to fetch tickets' },
       { status: 500 }
@@ -143,7 +142,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(ticket)
   } catch (error) {
-    console.error('Error creating ticket:', error)
     return NextResponse.json(
       { error: 'Failed to create ticket' },
       { status: 500 }
@@ -183,7 +181,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting ticket:', error);
     return NextResponse.json({ error: 'Failed to delete ticket' }, { status: 500 });
   }
 }

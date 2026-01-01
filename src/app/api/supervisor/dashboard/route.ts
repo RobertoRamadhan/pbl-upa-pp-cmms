@@ -136,7 +136,6 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('Error fetching supervisor dashboard data:', error)
     return NextResponse.json(
       { error: 'Terjadi kesalahan saat mengambil data dashboard' },
       { status: 500 }

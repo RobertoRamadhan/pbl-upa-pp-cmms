@@ -94,7 +94,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json(repairLog);
   } catch (error) {
-    console.error('Error updating repair status:', error);
     return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
   }
 }
