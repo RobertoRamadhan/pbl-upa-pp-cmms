@@ -68,10 +68,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
     const dbRole = roleMap[role] as UserRole | undefined;
 
     if (!dbRole) {
-      console.log('Invalid role received:', {
-        received: role,
-        validRoles: Object.keys(roleMap)
-      });
       return NextResponse.json(
         { error: 'Role tidak valid' },
         { status: 400 }
@@ -87,11 +83,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
     } | null;
 
     try {
-      console.log('Executing user query with:', {
-        username,
-        role: dbRole
-      });
-
       // Direct query tanpa connection test - Prisma sudah handle connection pooling
       const userByUsername = await prisma.systemUser.findFirst({
         where: { 
@@ -106,13 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
         },
       }) as UserResult;
 
-      console.log('Database query result:', {
-        searchedUsername: username,
-        userFound: !!userByUsername
-      });
-
       if (!userByUsername) {
-        console.log('User not found:', { username });
         return NextResponse.json(
           { error: 'Username atau password salah' },
           { status: 401 }
@@ -123,7 +108,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
 
       // Ensure password is present in DB before calling bcrypt
       if (!user.password) {
-        console.error('User has no password set in DB:', { id: user.id, username: user.username })
         return NextResponse.json(
           { error: 'Username atau password salah' },
           { status: 401 }
