@@ -14,7 +14,7 @@ export async function sendSystemNotification(
   userId: string,
   title: string,
   message: string,
-  type: 'TICKET' | 'ASSIGNMENT' | 'REPAIR' | 'SYSTEM'
+  type: 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS'
 ) {
   // Save to database
   const notification = await prisma.notification.create({

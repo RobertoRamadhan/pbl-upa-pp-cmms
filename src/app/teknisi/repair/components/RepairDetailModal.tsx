@@ -64,8 +64,9 @@ export default function RepairDetailModal({
       const reader = new FileReader();
 
       reader.onload = (event) => {
-        if (event.target?.result) {
-          setImagePreview((prev) => [...prev, event.target.result as string]);
+        const target = event.target as FileReader;
+        if (target?.result) {
+          setImagePreview((prev) => [...prev, target.result as string]);
         }
       };
 
