@@ -125,15 +125,15 @@ export default function RegisterPage() {
   const departments = [
     'Dosen',
     'Laboran',
-    'Tenaga Kependidikan'
+    'Tenaga Pendidikan'
   ];
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Registrasi</h1>
-          <p className="text-gray-600 mt-2">Daftar akun staff baru</p>
+          <h1 className="text-3xl font-bold text-gray-900">Registrasi</h1>
+          <p className="text-gray-700 mt-2">Daftar akun staff baru</p>
         </div>
 
         {error && (
@@ -150,7 +150,7 @@ export default function RegisterPage() {
 
         {/* Registration Type Selector */}
         <div className="mb-6 border-b pb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-gray-900 mb-3">
             Tipe Registrasi
           </label>
           <div className="grid grid-cols-2 gap-4">
@@ -168,8 +168,8 @@ export default function RegisterPage() {
               }`}
             >
               <div className="text-2xl mb-2">👤</div>
-              <div className="font-medium text-gray-700">Staff</div>
-              <div className="text-xs text-gray-500">Pendaftaran Umum</div>
+              <div className="font-medium text-gray-800">Staff</div>
+              <div className="text-xs text-gray-600">Pendaftaran Umum</div>
             </button>
 
             <button
@@ -185,8 +185,8 @@ export default function RegisterPage() {
               }`}
             >
               <div className="text-2xl mb-2">🔑</div>
-              <div className="font-medium text-gray-700">Token</div>
-              <div className="text-xs text-gray-500">Supervisor/Technician</div>
+              <div className="font-medium text-gray-800">Token</div>
+              <div className="text-xs text-gray-600">Supervisor/Technician</div>
             </button>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
             <>
               {/* Role Selection for Token */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Role <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -220,7 +220,7 @@ export default function RegisterPage() {
 
               {/* Registration Token */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Token Registrasi <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -231,14 +231,14 @@ export default function RegisterPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   required={registrationType === 'token'}
                 />
-                <p className="text-xs text-gray-500 mt-1">Hubungi administrator untuk mendapatkan token registrasi</p>
+                <p className="text-xs text-gray-600 mt-1">Hubungi administrator untuk mendapatkan token registrasi</p>
               </div>
             </>
           )}
 
           {/* Username */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Username <span className="text-red-500">*</span>
             </label>
             <input
@@ -259,7 +259,7 @@ export default function RegisterPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Email <span className="text-red-500">*</span>
             </label>
             <input
@@ -280,7 +280,7 @@ export default function RegisterPage() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Nama Lengkap <span className="text-red-500">*</span>
             </label>
             <input
@@ -301,7 +301,7 @@ export default function RegisterPage() {
 
           {/* Department */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Departemen <span className="text-red-500">*</span>
             </label>
             <select
@@ -325,7 +325,7 @@ export default function RegisterPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Password <span className="text-red-500">*</span>
             </label>
             <input
@@ -346,7 +346,7 @@ export default function RegisterPage() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Konfirmasi Password <span className="text-red-500">*</span>
             </label>
             <input
@@ -376,7 +376,7 @@ export default function RegisterPage() {
 
         {/* Link to Login */}
         <div className="text-center mt-6">
-          <p className="text-gray-600">
+          <p className="text-gray-700">
             Sudah punya akun?{' '}
             <Link href="/login" className="text-blue-600 hover:text-blue-800 font-semibold">
               Login di sini

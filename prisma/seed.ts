@@ -56,37 +56,86 @@ async function main() {
     });
     console.log('Supervisor created:', supervisor);
     
-    // TODO: Uncomment after migration is applied to production database
-    // console.log('\n📋 Creating ticket categories...');
-    // const defaultCategories = [
-    //   { name: 'Komputer/Laptop', description: 'Masalah dengan komputer atau laptop' },
-    //   { name: 'Printer', description: 'Masalah dengan printer atau mesin pencetak' },
-    //   { name: 'Jaringan', description: 'Masalah konektivitas jaringan atau WiFi' },
-    //   { name: 'AC', description: 'Perbaikan dan perawatan sistem AC' },
-    //   { name: 'Listrik', description: 'Perbaikan sistem kelistrikan' },
-    //   { name: 'Furniture', description: 'Perbaikan mebel dan peralatan kantor' },
-    //   { name: 'Lainnya', description: 'Kategori lainnya yang tidak tercantum' }
-    // ];
+    // Create ticket categories based on UPA maintenance structure
+    console.log('\n📋 Creating ticket categories...');
+    const defaultCategories = [
+      {
+        name: 'Kerusakan Gedung (Fisik Bangunan)',
+        description: 'Bangunan & Struktur, Pintu & Jendela, Fasilitas Sanitasi'
+      },
+      {
+        name: 'Bangunan & Struktur',
+        description: 'Dinding retak/rusak, atap bocor/rusak, lantai rusak, plafon jebol'
+      },
+      {
+        name: 'Pintu & Jendela',
+        description: 'Engsel rusak, kunci macet, kaca pecah, kusen lapuk'
+      },
+      {
+        name: 'Fasilitas Sanitasi',
+        description: 'Toilet mampet/rusak, keran bocor, instalasi air rusak'
+      },
+      {
+        name: 'Sistem Elektrikal & Mekanikal',
+        description: 'Instalasi listrik, sistem air, sistem pendingin'
+      },
+      {
+        name: 'Instalasi Listrik',
+        description: 'Lampu mati, stopkontak tidak berfungsi, korsleting, gangguan MCB'
+      },
+      {
+        name: 'Sistem Air',
+        description: 'Pipa bocor, pompa air rusak, instalasi air panas/dingin bermasalah'
+      },
+      {
+        name: 'Sistem Pendingin (AC)',
+        description: 'AC tidak dingin, AC bocor, AC mati'
+      },
+      {
+        name: 'Peralatan & Fasilitas Pendidikan/Umum',
+        description: 'Peralatan IT, laboratorium, meubel, dan fasilitas umum'
+      },
+      {
+        name: 'Peralatan Komputer & IT',
+        description: 'Komputer error, proyektor mati/bergaris, speaker tidak bersuara, printer rusak'
+      },
+      {
+        name: 'Peralatan Laboratorium',
+        description: 'Kerusakan alat praktikum sesuai lingkup UPA'
+      },
+      {
+        name: 'Meubel & Furnitur',
+        description: 'Kursi patah, meja rusak, lemari tidak bisa ditutup'
+      },
+      {
+        name: 'Fasilitas Umum',
+        description: 'Pagar rusak, gerbang bermasalah, papan pengumuman pecah'
+      },
+      {
+        name: 'Pemeliharaan Rutin',
+        description: 'Pemeriksaan berkala dan perawatan preventif untuk semua fasilitas'
+      }
+    ];
 
-    // for (const cat of defaultCategories) {
-    //   try {
-    //     await prisma.ticketCategory.upsert({
-    //       where: { name: cat.name },
-    //       update: {
-    //         description: cat.description,
-    //         isActive: true
-    //       },
-    //       create: {
-    //         name: cat.name,
-    //         description: cat.description,
-    //         isActive: true
-    //       }
-    //     });
-    //     console.log(`✓ Category created: ${cat.name}`);
-    //   } catch (error) {
-    //     console.log(`ℹ Category already exists: ${cat.name}`);
-    //   }
-    // }
+    for (const cat of defaultCategories) {
+      try {
+        await prisma.ticketCategory.upsert({
+          where: { name: cat.name },
+          update: {
+            description: cat.description,
+            isActive: true
+          },
+          create: {
+            name: cat.name,
+            description: cat.description,
+            isActive: true
+          }
+        });
+        console.log(`✓ Category created: ${cat.name}`);
+      } catch (error) {
+        console.log(`ℹ Category already exists: ${cat.name}`);
+      }
+    }
     
     console.log('\n✅ Database seeding complete!');
     console.log('📝 Test credentials:');
