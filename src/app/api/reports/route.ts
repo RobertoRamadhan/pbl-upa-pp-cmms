@@ -41,7 +41,7 @@ export async function GET(request: Request) {
             })
           },
           include: {
-            user_assignment_technicianIdTouser: {
+            technician: {
               select: {
                 name: true,
                 technicianProfile: true
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
     }
 
     if (format === 'pdf') {
-      const pdfBuffer = await generatePDF(data, template)
+      const pdfBuffer = await generatePDF(data)
       
       return new Response(pdfBuffer, {
         headers: {
