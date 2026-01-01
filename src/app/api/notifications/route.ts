@@ -1,12 +1,14 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 
 // GET - Fetch notifications for a user
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50') // Default 50 notifications per page
 
     if (!userId) {
       return NextResponse.json(
@@ -15,11 +17,15 @@ export async function GET(request: Request) {
       )
     }
 
+    const skip = (page - 1) * limit
+
     const notifications = await prisma.notification.findMany({
       where: {
         userId,
         ...(unreadOnly && { isRead: false })
       },
+      skip,
+      take: limit,
       orderBy: {
         createdAt: 'desc'
       }
@@ -27,7 +33,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(notifications)
   } catch (error) {
-    console.error('Error fetching notifications:', error)
     return NextResponse.json(
       { error: 'Failed to fetch notifications' },
       { status: 500 }

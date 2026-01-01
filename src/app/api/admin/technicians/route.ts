@@ -1,10 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20'); // Default 20 per page
+    
+    const skip = (page - 1) * limit;
+
     const technicians = await prisma.systemUser.findMany({
       where: {
         role: 'TECHNICIAN'
@@ -21,12 +27,16 @@ export async function GET() {
             shift: true
           }
         }
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc'
       }
     });
 
     return NextResponse.json(technicians);
   } catch (error) {
-    console.error('Error fetching technicians:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

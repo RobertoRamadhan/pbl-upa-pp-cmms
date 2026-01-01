@@ -1,14 +1,16 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 
 // GET - Fetch all assets or filter by category/location
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const location = searchParams.get('location')
     const status = searchParams.get('status')
     const needsMaintenance = searchParams.get('needsMaintenance')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '25') // Default 25 assets per page
 
     const where: Record<string, any> = {}
     
@@ -21,6 +23,8 @@ export async function GET(request: Request) {
       }
     }
 
+    const skip = (page - 1) * limit
+
     const assets = await prisma.asset.findMany({
       where,
       include: {
@@ -31,6 +35,8 @@ export async function GET(request: Request) {
           }
         }
       },
+      skip,
+      take: limit,
       orderBy: {
         updatedAt: 'desc'
       }
@@ -38,7 +44,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(assets)
   } catch (error) {
-    console.error('Error fetching assets:', error)
     return NextResponse.json(
       { error: 'Failed to fetch assets' },
       { status: 500 }

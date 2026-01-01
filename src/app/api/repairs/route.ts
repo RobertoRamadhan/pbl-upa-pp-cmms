@@ -6,6 +6,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const technicianId = searchParams.get('technicianId');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20'); // Default 20 repairs per page
+
+    const skip = (page - 1) * limit;
 
     // Get all assignments for the technician with related ticket information
     const assignments = await prisma.assignment.findMany({
@@ -18,6 +22,11 @@ export async function GET(request: NextRequest) {
             user: true
           }
         }
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        assignedAt: 'desc'
       }
     });
 
