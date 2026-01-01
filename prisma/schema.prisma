@@ -18,9 +18,10 @@ model SystemUser {
   id                String             @id
   username          String             @unique
   password          String
+  email             String             @unique
+  googleId          String?            @unique
   role              user_role          @default(STAFF)
   name              String
-  email             String             @unique
   phone             String?
   department        String?
   joinDate          DateTime           @default(now())
@@ -33,6 +34,7 @@ model SystemUser {
   technicianProfile TechnicianProfile?
   tickets           Ticket[]
   notifications     Notification[]
+  registrationTokens RegistrationToken[]
 }
 
 model Notification {
@@ -45,6 +47,22 @@ model Notification {
   user      SystemUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model RegistrationToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  createdById String
+  createdFor user_role // Role yang bisa pakai token ini (SUPERVISOR, TECHNICIAN)
+  email     String?   // Email yang authorized untuk token ini
+  isUsed    Boolean   @default(false)
+  usedAt    DateTime?
+  usedById  String?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  createdBy SystemUser @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
 }
 
 model MaintenanceHistory {

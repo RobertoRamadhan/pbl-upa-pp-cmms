@@ -6,6 +6,7 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [registrationType, setRegistrationType] = useState<'staff' | 'token'>('staff');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -13,6 +14,10 @@ export default function RegisterPage() {
     confirmPassword: '',
     name: '',
     department: ''
+  });
+  const [tokenData, setTokenData] = useState({
+    token: '',
+    role: '' as 'SUPERVISOR' | 'TECHNICIAN' | ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +47,47 @@ export default function RegisterPage() {
     setFieldErrors({});
 
     try {
+      // Token-based registration untuk SUPERVISOR & TECHNICIAN
+      if (registrationType === 'token') {
+        if (!tokenData.token || !tokenData.role) {
+          setError('Token dan role harus diisi');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/auth/register-with-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...formData,
+            registrationToken: tokenData.token,
+            role: tokenData.role
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.error || 'Registrasi gagal');
+          if (data.details) {
+            setFieldErrors(data.details);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        setSuccess(true);
+        alert('Registrasi berhasil! Silakan login dengan akun Anda.');
+        
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+        return;
+      }
+
+      // Regular registration untuk STAFF
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -108,7 +154,94 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {/* Registration Type Selector */}
+        <div className="mb-6 border-b pb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Tipe Registrasi
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                setRegistrationType('staff');
+                setError('');
+                setTokenData({ token: '', role: '' });
+              }}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                registrationType === 'staff'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <div className="text-2xl mb-2">👤</div>
+              <div className="font-medium text-gray-700">Staff</div>
+              <div className="text-xs text-gray-500">Pendaftaran Umum</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRegistrationType('token');
+                setError('');
+              }}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                registrationType === 'token'
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <div className="text-2xl mb-2">🔑</div>
+              <div className="font-medium text-gray-700">Token</div>
+              <div className="text-xs text-gray-500">Supervisor/Technician</div>
+            </button>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+              <p className="font-semibold">{error}</p>
+            </div>
+          )}
+
+          {/* Token Registration Fields */}
+          {registrationType === 'token' && (
+            <>
+              {/* Role Selection for Token */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={tokenData.role}
+                  onChange={(e) => setTokenData(prev => ({ ...prev, role: e.target.value as 'SUPERVISOR' | 'TECHNICIAN' }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  required={registrationType === 'token'}
+                >
+                  <option value="">Pilih Role</option>
+                  <option value="SUPERVISOR">Supervisor</option>
+                  <option value="TECHNICIAN">Technician</option>
+                </select>
+              </div>
+
+              {/* Registration Token */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Token Registrasi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={tokenData.token}
+                  onChange={(e) => setTokenData(prev => ({ ...prev, token: e.target.value }))}
+                  placeholder="Masukkan token dari administrator"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  required={registrationType === 'token'}
+                />
+                <p className="text-xs text-gray-500 mt-1">Hubungi administrator untuk mendapatkan token registrasi</p>
+              </div>
+            </>
+          )}
+
           {/* Username */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

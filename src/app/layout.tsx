@@ -23,6 +23,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
+      <head>
+        {/* Google OAuth 2.0 SDK */}
+        <script async src="https://accounts.google.com/gsi/client"></script>
+      </head>
       <body 
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen`}
         style={{

@@ -24,17 +24,17 @@ async function main() {
     await prisma.systemUser.deleteMany();
     await prisma.asset.deleteMany();
     console.log('Existing data cleared');
-    // Create admin user
-    const adminPassword = await hash('admin123', 10);
+    // Create admin user dengan password yang aman
+    const adminPassword = await hash('Admin@CMMS2024Secure!', 10);
     const admin = await prisma.systemUser.create({
       data: {
         id: 'admin-1',
         username: 'admin',
         password: adminPassword,
         role: 'ADMIN',
-        name: 'Administrator',
-        email: 'admin@example.com',
-        department: 'IT',
+        name: 'Administrator CMMS',
+        email: 'obetkaneki12@gmail.com',
+        department: 'IT/System',
         updatedAt: new Date(),
       },
     });
@@ -58,9 +58,9 @@ async function main() {
     
     console.log('\n✅ Database seeding complete!');
     console.log('📝 Test credentials:');
-    console.log('   Admin: username "admin" / password "admin123"');
+    console.log('   Admin: username "admin" / password "Admin@CMMS2024Secure!" (email: obetkaneki12@gmail.com)');
     console.log('   Supervisor: username "supervisor" / password "supervisor123"');
-    console.log('\n💡 Create staff and technician users from Admin Dashboard');
+    console.log('\n💡 Create staff and technician users from Admin Dashboard or via registration tokens');
 
   } catch (error) {
     console.error('Error seeding data:', error);

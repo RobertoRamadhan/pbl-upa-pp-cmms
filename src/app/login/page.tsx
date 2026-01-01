@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { FormEvent } from 'react';
@@ -20,14 +20,35 @@ interface Credentials {
   password: string;
 }
 
+interface GoogleTokenPayload {
+  clientId?: string;
+  credential?: string;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, options: any) => void;
+          prompt: (callback: (notification: any) => void) => void;
+        };
+      };
+    };
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   const [selectedRole, setSelectedRole] = useState<RoleType>('staff');
   const [credentials, setCredentials] = useState<Credentials>({
     username: '',
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
   const roles: Role[] = [
@@ -103,6 +124,102 @@ export default function LoginPage() {
 
     checkSession();
   }, [router]);
+
+  // Initialize Google Sign-In
+  useEffect(() => {
+    const initializeGoogleSignIn = () => {
+      if (typeof window === 'undefined' || !window.google) {
+        console.warn('Google SDK not yet loaded');
+        return;
+      }
+
+      try {
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+          callback: handleGoogleLogin,
+          auto_select: false
+        });
+
+        // Render button jika ref ada
+        if (googleButtonRef.current && !googleButtonRef.current.innerHTML) {
+          window.google.accounts.id.renderButton(googleButtonRef.current, {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+            text: 'signin'
+          });
+        }
+      } catch (error) {
+        console.error('Google Sign-In initialization error:', error);
+      }
+    };
+
+    // Tunggu Google SDK loaded
+    const checkGoogleSDK = setInterval(() => {
+      if (window.google) {
+        clearInterval(checkGoogleSDK);
+        initializeGoogleSignIn();
+      }
+    }, 100);
+
+    return () => clearInterval(checkGoogleSDK);
+  }, []);
+
+  const handleGoogleLogin = async (response: GoogleTokenPayload) => {
+    if (!response.credential) {
+      setError('Google credential tidak ditemukan');
+      return;
+    }
+
+    setGoogleLoading(true);
+    setError('');
+
+    try {
+      const result = await fetch('/api/auth/google-callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          credential: response.credential,
+          role: selectedRole
+        })
+      });
+
+      const data = await result.json();
+
+      if (!result.ok) {
+        setError(data.error || 'Google login gagal');
+        return;
+      }
+
+      // Save session
+      const sessionData = {
+        id: data.id,
+        username: data.username,
+        name: data.name,
+        email: data.email,
+        role: data.role
+      };
+
+      localStorage.setItem('user_session', JSON.stringify(sessionData));
+
+      // Redirect sesuai role
+      const redirectPath = data.role === 'staff' 
+        ? '/staff/new-ticket' 
+        : `/${data.role}/dashboard`;
+      
+      router.replace(redirectPath);
+
+    } catch (error) {
+      console.error('Google login error:', error);
+      setError('Terjadi kesalahan saat login dengan Google');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Original useEffect dipindahkan ke bawah
 
   const handleSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -378,6 +495,30 @@ export default function LoginPage() {
                 </div>
               )}
             </button>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Atau</span>
+              </div>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <div 
+              ref={googleButtonRef} 
+              className="flex justify-center"
+              style={{ minHeight: '50px', display: 'flex', alignItems: 'center' }}
+            >
+              {googleLoading && (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-sm text-gray-600">Loading Google...</span>
+                </div>
+              )}
+            </div>
           </form>
         </div>
 
