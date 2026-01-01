@@ -33,9 +33,10 @@ CREATE TABLE "SystemUser" (
     "id" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "password" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "googleId" TEXT,
     "role" "user_role" NOT NULL DEFAULT 'STAFF',
     "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
     "phone" TEXT,
     "department" TEXT,
     "joinDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -56,6 +57,22 @@ CREATE TABLE "Notification" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RegistrationToken" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "createdFor" "user_role" NOT NULL,
+    "email" TEXT,
+    "isUsed" BOOLEAN NOT NULL DEFAULT false,
+    "usedAt" TIMESTAMP(3),
+    "usedById" TEXT,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "RegistrationToken_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -153,9 +170,22 @@ CREATE TABLE "TechnicianProfile" (
 );
 
 -- CreateTable
+CREATE TABLE "TicketCategory" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TicketCategory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Ticket" (
     "id" TEXT NOT NULL,
     "ticketNumber" TEXT NOT NULL,
+    "categoryId" TEXT,
     "category" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
     "description" TEXT NOT NULL,
@@ -186,7 +216,16 @@ CREATE UNIQUE INDEX "SystemUser_username_key" ON "SystemUser"("username");
 CREATE UNIQUE INDEX "SystemUser_email_key" ON "SystemUser"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "SystemUser_googleId_key" ON "SystemUser"("googleId");
+
+-- CreateIndex
 CREATE INDEX "Notification_userId_idx" ON "Notification"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RegistrationToken_token_key" ON "RegistrationToken"("token");
+
+-- CreateIndex
+CREATE INDEX "RegistrationToken_createdById_idx" ON "RegistrationToken"("createdById");
 
 -- CreateIndex
 CREATE INDEX "MaintenanceHistory_assetId_idx" ON "MaintenanceHistory"("assetId");
@@ -219,10 +258,16 @@ CREATE INDEX "RepairLog_technicianId_idx" ON "RepairLog"("technicianId");
 CREATE UNIQUE INDEX "TechnicianProfile_userId_key" ON "TechnicianProfile"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "TicketCategory_name_key" ON "TicketCategory"("name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Ticket_ticketNumber_key" ON "Ticket"("ticketNumber");
 
 -- AddForeignKey
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "SystemUser"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RegistrationToken" ADD CONSTRAINT "RegistrationToken_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "SystemUser"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "MaintenanceHistory" ADD CONSTRAINT "MaintenanceHistory_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "Asset"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -253,3 +298,6 @@ ALTER TABLE "TechnicianProfile" ADD CONSTRAINT "TechnicianProfile_userId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_reporterId_fkey" FOREIGN KEY ("reporterId") REFERENCES "SystemUser"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "TicketCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;

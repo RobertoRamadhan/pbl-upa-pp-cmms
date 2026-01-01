@@ -56,37 +56,37 @@ async function main() {
     });
     console.log('Supervisor created:', supervisor);
     
-    // Create default ticket categories
-    console.log('\n📋 Creating ticket categories...');
-    const defaultCategories = [
-      { name: 'Komputer/Laptop', description: 'Masalah dengan komputer atau laptop' },
-      { name: 'Printer', description: 'Masalah dengan printer atau mesin pencetak' },
-      { name: 'Jaringan', description: 'Masalah konektivitas jaringan atau WiFi' },
-      { name: 'AC', description: 'Perbaikan dan perawatan sistem AC' },
-      { name: 'Listrik', description: 'Perbaikan sistem kelistrikan' },
-      { name: 'Furniture', description: 'Perbaikan mebel dan peralatan kantor' },
-      { name: 'Lainnya', description: 'Kategori lainnya yang tidak tercantum' }
-    ];
+    // TODO: Uncomment after migration is applied to production database
+    // console.log('\n📋 Creating ticket categories...');
+    // const defaultCategories = [
+    //   { name: 'Komputer/Laptop', description: 'Masalah dengan komputer atau laptop' },
+    //   { name: 'Printer', description: 'Masalah dengan printer atau mesin pencetak' },
+    //   { name: 'Jaringan', description: 'Masalah konektivitas jaringan atau WiFi' },
+    //   { name: 'AC', description: 'Perbaikan dan perawatan sistem AC' },
+    //   { name: 'Listrik', description: 'Perbaikan sistem kelistrikan' },
+    //   { name: 'Furniture', description: 'Perbaikan mebel dan peralatan kantor' },
+    //   { name: 'Lainnya', description: 'Kategori lainnya yang tidak tercantum' }
+    // ];
 
-    for (const cat of defaultCategories) {
-      try {
-        await prisma.ticketCategory.upsert({
-          where: { name: cat.name },
-          update: {
-            description: cat.description,
-            isActive: true
-          },
-          create: {
-            name: cat.name,
-            description: cat.description,
-            isActive: true
-          }
-        });
-        console.log(`✓ Category created: ${cat.name}`);
-      } catch (error) {
-        console.log(`ℹ Category already exists: ${cat.name}`);
-      }
-    }
+    // for (const cat of defaultCategories) {
+    //   try {
+    //     await prisma.ticketCategory.upsert({
+    //       where: { name: cat.name },
+    //       update: {
+    //         description: cat.description,
+    //         isActive: true
+    //       },
+    //       create: {
+    //         name: cat.name,
+    //         description: cat.description,
+    //         isActive: true
+    //       }
+    //     });
+    //     console.log(`✓ Category created: ${cat.name}`);
+    //   } catch (error) {
+    //     console.log(`ℹ Category already exists: ${cat.name}`);
+    //   }
+    // }
     
     console.log('\n✅ Database seeding complete!');
     console.log('📝 Test credentials:');
