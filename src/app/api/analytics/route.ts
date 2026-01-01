@@ -68,7 +68,7 @@ export async function GET(request: Request) {
       prisma.systemUser.findMany({
         where: {
           role: 'TECHNICIAN',
-          assignment_assignment_technicianIdTouser: {
+          assignedToMe: {
             some: {
               assignedAt: {
                 gte: startDate,
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
         select: {
           id: true,
           name: true,
-          assignment_assignment_technicianIdTouser: {
+          assignedToMe: {
             where: {
               assignedAt: {
                 gte: startDate,
@@ -144,8 +144,8 @@ export async function GET(request: Request) {
 
     // Format technician performance data
     const performanceByTechnician = technicians.map(tech => {
-      const assignments = tech.assignment_assignment_technicianIdTouser
-      const completed = assignments.filter(a => a.status === 'COMPLETED').length
+      const assignments = tech.assignedToMe
+      const completed = assignments.filter((a: any) => a.status === 'COMPLETED').length
       const total = assignments.length
 
       return {
