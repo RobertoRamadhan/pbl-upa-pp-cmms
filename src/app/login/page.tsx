@@ -133,9 +133,15 @@ export default function LoginPage() {
         return;
       }
 
+      // Skip if client_id not set
+      if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+        console.warn('Google Client ID not configured');
+        return;
+      }
+
       try {
         window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
           callback: handleGoogleLogin,
           auto_select: false
         });
@@ -507,18 +513,24 @@ export default function LoginPage() {
             </div>
 
             {/* Google Sign-In Button */}
-            <div 
-              ref={googleButtonRef} 
-              className="flex justify-center"
-              style={{ minHeight: '50px', display: 'flex', alignItems: 'center' }}
-            >
-              {googleLoading && (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2 text-sm text-gray-600">Loading Google...</span>
-                </div>
+            {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+              <div 
+                ref={googleButtonRef} 
+                className="flex justify-center"
+                style={{ minHeight: '50px', display: 'flex', alignItems: 'center' }}
+              >
+                {googleLoading && (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="ml-2 text-sm text-gray-600">Loading Google...</span>
+                  </div>
               )}
-            </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center text-sm text-yellow-800">
+                Google login tidak tersedia. Silakan gunakan username/password.
+              </div>
+            )}
           </form>
         </div>
 
