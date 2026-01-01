@@ -128,19 +128,9 @@ export default function DashboardPage() {
   }, [router]);
 
   const fetchDashboardStats = async (userId: string, userRole: string) => {
-    console.log('Fetching dashboard stats...', {
-      userId,
-      userRole,
-      timestamp: new Date().toISOString()
-    });
-    
     try {
       setLoading(true);
       setError('');
-
-      // Log session info
-      const sessionStr = localStorage.getItem('user_session');
-      console.log('Current session:', sessionStr ? JSON.parse(sessionStr) : null);
 
       const response = await fetch('/api/admin/dashboard-stats', {
         method: 'GET',
@@ -152,18 +142,10 @@ export default function DashboardPage() {
         credentials: 'include'
       });
 
-      console.log('API Response received:', {
-        status: response.status,
-        ok: response.ok,
-        statusText: response.statusText
-      });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.log('Error response data:', errorData);
 
         if (response.status === 401 || response.status === 403) {
-          console.log('Authentication failed, redirecting to login...');
           localStorage.removeItem('user_session');
           router.replace('/login');
           return;
@@ -172,13 +154,6 @@ export default function DashboardPage() {
       }
       
       const data = await response.json();
-      console.log('Dashboard data received:', {
-        currentStats: data.currentStats,
-        recentAssignmentsCount: data.recentAssignments?.length,
-        monthlyStatsCount: data.monthlyStats?.length,
-        recentAssignments: data.recentAssignments,
-        monthlyStats: data.monthlyStats
-      });
 
       setStats(data);
       setError('');

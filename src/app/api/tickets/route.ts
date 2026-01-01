@@ -118,7 +118,7 @@ export async function POST(request: Request) {
         status: 'PENDING' as any,
         reporterId: user.id,
         assetCode,
-        severity: severity as 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL' || 'NORMAL',
+        severity: (severity as 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL') || 'NORMAL',
         notes,
         updatedAt: new Date()
       },

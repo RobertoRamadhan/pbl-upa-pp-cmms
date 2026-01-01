@@ -150,7 +150,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
       // Set secure cookies untuk autentikasi
       response.cookies.set('auth_token', user.id, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Always secure in production; Vercel auto-sets NODE_ENV
         sameSite: 'strict',
         path: '/',
         maxAge: 60 * 60 * 24 // 24 jam
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
       // Set role cookie (non-httpOnly agar bisa diakses client)
       response.cookies.set('user_role', frontendRole, {
         httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Always secure in production; Vercel auto-sets NODE_ENV
         sameSite: 'strict',
         path: '/',
         maxAge: 60 * 60 * 24 // 24 jam

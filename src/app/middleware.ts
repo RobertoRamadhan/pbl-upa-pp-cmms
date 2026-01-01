@@ -16,11 +16,7 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session');
   const userId = session?.value;
 
-  console.log('Middleware - Session:', session);
-  console.log('Middleware - User ID:', userId);
-
   if (!userId) {
-    console.log('Middleware - No session found');
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -38,8 +34,6 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.redirect(new URL('/login', request.url));
     }
-
-    console.log('Middleware - User found:', { id: user.id, role: user.role });
 
     // Role check for admin routes
     if (
@@ -69,11 +63,6 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set('x-user-id', user.id);
     response.headers.set('x-user-role', user.role);
-
-    console.log('Middleware - Headers set:', {
-      'x-user-id': user.id,
-      'x-user-role': user.role
-    });
 
     return response;
   } catch (error) {
