@@ -148,7 +148,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(repairLog);
   } catch (error) {
-    console.error("Error creating repair log:", error);
     return NextResponse.json(
       { error: "Failed to create repair log" },
       { status: 500 }

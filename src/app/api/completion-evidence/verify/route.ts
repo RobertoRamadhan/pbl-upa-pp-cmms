@@ -82,7 +82,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Verify error:', error);
     return NextResponse.json(
       { error: 'Gagal memverifikasi laporan' },
       { status: 500 }

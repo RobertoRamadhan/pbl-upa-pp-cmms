@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(evidences);
   } catch (error) {
-    console.error('Error fetching completion evidence:', error);
     return NextResponse.json(
       { error: 'Failed to fetch completion evidence' },
       { status: 500 }

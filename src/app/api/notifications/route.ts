@@ -57,7 +57,6 @@ export async function POST(request: Request) {
     // TODO: Implement real-time notification using WebSocket/SSE
     return NextResponse.json(notification)
   } catch (error) {
-    console.error('Error creating notification:', error)
     return NextResponse.json(
       { error: 'Failed to create notification' },
       { status: 500 }
@@ -107,7 +106,6 @@ export async function PUT(request: Request) {
       })
     }
   } catch (error) {
-    console.error('Error updating notifications:', error)
     return NextResponse.json(
       { error: 'Failed to update notifications' },
       { status: 500 }

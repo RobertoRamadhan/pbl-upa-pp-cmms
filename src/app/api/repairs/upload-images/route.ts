@@ -85,12 +85,9 @@ export async function POST(request: NextRequest) {
       where: { id: existingAssignment.ticket.id },
       data: { status: ticketStatus as any },
     });
-    
-    console.log('[UPLOAD-IMAGES] Assignment updated successfully');
 
     // Buat notifikasi untuk admin dan supervisor HANYA jika needsVerification=true
     if (existingAssignment.needsVerification) {
-      console.log('[UPLOAD-IMAGES] Finding admin and supervisor users');
       const adminAndSupervisors = await prisma.systemUser.findMany({
         where: {
           role: { in: ['ADMIN', 'SUPERVISOR'] },
@@ -101,13 +98,10 @@ export async function POST(request: NextRequest) {
           username: true,
         },
       });
-      
-      console.log(`[UPLOAD-IMAGES] Found ${adminAndSupervisors.length} admin/supervisor users`);
 
       if (adminAndSupervisors.length > 0) {
         for (const user of adminAndSupervisors) {
           try {
-            console.log(`[UPLOAD-IMAGES] Creating notification for user: ${user.id}`);
             await prisma.notification.create({
               data: {
                 userId: user.id,
@@ -116,15 +110,11 @@ export async function POST(request: NextRequest) {
               },
             });
           } catch (notifError) {
-            console.error(`[UPLOAD-IMAGES] Error creating notification for ${user.id}:`, notifError);
+            // Silently continue if notification fails
           }
         }
       }
-    } else {
-      console.log('[UPLOAD-IMAGES] No supervisor verification needed, ticket auto-closed');
     }
-
-    console.log('[UPLOAD-IMAGES] All notifications created successfully');
     
     return NextResponse.json(
       {
@@ -139,12 +129,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('[UPLOAD-IMAGES] ERROR:', error);
-    if (error instanceof Error) {
-      console.error('[UPLOAD-IMAGES] ERROR Message:', error.message);
-      console.error('[UPLOAD-IMAGES] ERROR Stack:', error.stack);
-    }
-
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
 

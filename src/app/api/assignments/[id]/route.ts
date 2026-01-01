@@ -57,7 +57,6 @@ export async function GET(
 
     return NextResponse.json(assignment);
   } catch (error) {
-    console.error("Error fetching assignment:", error);
     return NextResponse.json(
       { error: "Failed to fetch assignment" },
       { status: 500 }

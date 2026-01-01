@@ -7,8 +7,6 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Received register request')
-
     // Ensure request has JSON content-type
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
@@ -20,7 +18,6 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json();
     } catch (parseError) {
-      console.error('Failed to parse JSON body for register:', parseError);
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
@@ -110,9 +107,6 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date()
       }
     });
-
-    console.log('New staff user created:', newUser.id);
-
     return NextResponse.json({
       success: true,
       message: 'Registrasi berhasil! Silakan login dengan akun Anda.',
@@ -120,7 +114,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error during registration:', error);
     return NextResponse.json(
       { error: 'Terjadi kesalahan saat registrasi. Silakan coba lagi.' },
       { status: 500 }
