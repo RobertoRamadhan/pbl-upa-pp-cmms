@@ -1,12 +1,16 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-// GET - Fetch all tickets
+// GET - Fetch all tickets with pagination
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const userId = searchParams.get('userId')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20') // Default 20 items per page
+    
+    const skip = (page - 1) * limit
 
     // Calculate 7 days ago cutoff
     const now = new Date();
@@ -27,6 +31,8 @@ export async function GET(request: Request) {
           }
         ]
       },
+      skip,
+      take: limit,
       include: {
         user: {
           select: {

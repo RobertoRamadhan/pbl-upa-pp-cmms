@@ -34,31 +34,16 @@ export const runtime = 'nodejs'
 export async function POST(request: NextRequest): Promise<NextResponse<LoginResponse | LoginErrorResponse>> {
   let body: any = undefined;
   try {
-    console.log('Received login request')
-
-    // Ensure request has JSON content-type
-    const contentType = request.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      console.warn('Login request with non-JSON content-type:', contentType);
-      return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 400 });
-    }
-
-    // Parse JSON body with explicit error handling
+    // Parse JSON body
     try {
       body = await request.json();
     } catch (parseError) {
-      console.error('Failed to parse JSON body for login:', parseError);
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
     const { username, password, role } = body
     
     if (!username || !password || !role) {
-      console.log('Missing required fields:', { 
-        hasUsername: !!username,
-        hasPassword: !!password,
-        hasRole: !!role 
-      })
       return NextResponse.json(
         { 
           error: 'Validasi gagal',

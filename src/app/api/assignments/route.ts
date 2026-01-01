@@ -2,17 +2,24 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { assignment_status } from "@prisma/client";
 
-// GET - Fetch all assignments
+// GET - Fetch all assignments with pagination
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const technicianId = searchParams.get("technicianId");
     const status = searchParams.get("status");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10"); // Default 10 per page
+    
+    const skip = (page - 1) * limit;
+    
     const assignments = await prisma.assignment.findMany({
       where: {
         ...(technicianId && { technicianId }),
         ...(status && { status: status as assignment_status }),
       },
+      skip,
+      take: limit,
       include: {
         ticket: true,
         technician: {

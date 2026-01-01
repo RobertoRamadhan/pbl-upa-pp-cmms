@@ -2,33 +2,22 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import type { NextRequest } from 'next/server';
 
+export const revalidate = 60; // Cache response for 60 seconds
+
 export async function GET(request: NextRequest) {
   try {
-    console.log('Checking database connection...');
-    // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
-    console.log('Database connection successful');
-
     // Check authentication and role
     const userId = request.headers.get('x-user-id');
     const userRole = request.headers.get('x-user-role');
 
-    console.log('Auth check:', { userId, userRole });
-
     if (!userId || !userRole) {
-      console.log('Missing auth headers:', { userId, userRole });
       return NextResponse.json(
         { error: 'Unauthorized - Missing auth headers' },
         { status: 401 }
       );
     }
 
-    // Convert to uppercase for comparison
-    const normalizedRole = userRole.toUpperCase();
-    console.log('Auth check:', { userId, userRole, normalizedRole });
-
-    if (normalizedRole !== 'ADMIN') {
-      console.log('Invalid role:', { userRole, normalizedRole });
+    if (userRole.toUpperCase() !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid role' },
         { status: 401 }
@@ -50,10 +39,6 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-    console.log('Starting to fetch ticket counts...');
-    
-    // Get current statistics
-    console.log('Fetching current ticket statistics...');
     
     // Calculate 7 days ago cutoff
     const now = new Date();
