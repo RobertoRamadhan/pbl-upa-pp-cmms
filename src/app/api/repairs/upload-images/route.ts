@@ -6,13 +6,9 @@ export async function POST(request: NextRequest) {
   let images: File[] = [];
 
   try {
-    console.log('[UPLOAD-IMAGES] Request received');
-    
     const formData = await request.formData();
     assignmentId = formData.get('assignmentId') as string;
     images = formData.getAll('images') as File[];
-
-    console.log(`[UPLOAD-IMAGES] assignmentId: ${assignmentId}, images count: ${images.length}`);
 
     if (!assignmentId) {
       return NextResponse.json(
@@ -28,7 +24,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[UPLOAD-IMAGES] Verifying assignment exists with ID: ${assignmentId}`);
     const existingAssignment = await prisma.assignment.findUnique({
       where: { id: assignmentId },
       include: { ticket: true },
@@ -45,23 +40,16 @@ export async function POST(request: NextRequest) {
     const uploadedImages: string[] = [];
     for (const image of images) {
       try {
-        console.log(`[UPLOAD-IMAGES] Processing image: ${image.name}, type: ${image.type}, size: ${image.size}`);
         const buffer = await image.arrayBuffer();
         const base64 = Buffer.from(buffer).toString('base64');
         const dataUrl = `data:${image.type};base64,${base64}`;
         uploadedImages.push(dataUrl);
-        console.log(`[UPLOAD-IMAGES] Image processed successfully`);
       } catch (imageError) {
-        console.error(`[UPLOAD-IMAGES] Error processing image ${image.name}:`, imageError);
         throw imageError;
       }
     }
 
-    console.log(`[UPLOAD-IMAGES] Base64 conversion complete, ${uploadedImages.length} images ready`);
-
     // Update assignment dengan gambar - set startTime jika belum ada
-    console.log(`[UPLOAD-IMAGES] Updating assignment with completed images`);
-    
     const now = new Date();
     
     // Jika needsVerification = false, langsung mark as COMPLETED
