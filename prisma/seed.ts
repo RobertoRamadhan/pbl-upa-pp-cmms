@@ -34,7 +34,7 @@ async function main() {
         role: 'ADMIN',
         name: 'Administrator CMMS',
         email: 'obetkaneki12@gmail.com',
-        department: 'IT/System',
+        department: 'Dosen',
         updatedAt: new Date(),
       },
     });
@@ -50,7 +50,7 @@ async function main() {
         role: 'SUPERVISOR',
         name: 'Kepala UPPA',
         email: 'supervisor@example.com',
-        department: 'UPPA',
+        department: 'Laboran',
         updatedAt: new Date(),
       },
     });

@@ -123,15 +123,9 @@ export default function RegisterPage() {
   };
 
   const departments = [
-    'Akademik',
-    'Administrasi',
-    'Kepala Sekolah',
-    'Wakil Kepala Sekolah',
-    'Bendahara',
-    'Operator',
-    'Guru',
-    'Staf',
-    'Lainnya'
+    'Dosen',
+    'Laboran',
+    'Tenaga Kependidikan'
   ];
 
   return (
