@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
         role: 'ADMIN'
       }
     });
-
     if (!user) {
       return NextResponse.json(
         { error: 'User not found or not authorized' },
@@ -44,30 +43,22 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
-    // Get current statistics with error handling
+    // Get current statistics
     let ticketStats;
     try {
       ticketStats = await prisma.ticket.groupBy({
         by: ['status'],
         where: {
           OR: [
-            // Include all non-completed tickets
             { NOT: { status: 'COMPLETED' } },
-            // Include completed tickets from last 7 days only
             {
               status: 'COMPLETED' as any,
-              completedAt: {
-                gte: sevenDaysAgo
-              }
+              completedAt: { gte: sevenDaysAgo }
             }
           ]
         },
-        _count: {
-          status: true
-        }
+        _count: { status: true }
       });
-      
-      console.log('Raw ticket stats:', ticketStats);
     } catch (error) {
       console.error('Error fetching ticket stats:', error);
       return NextResponse.json(
@@ -75,8 +66,6 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    console.log('Ticket statistics:', ticketStats);
 
     const assignmentCount = await prisma.assignment.count({
       where: {
@@ -128,8 +117,6 @@ export async function GET(request: NextRequest) {
           }
         }
       });
-      
-      console.log('Recent assignments:', recentAssignments);
     } catch (error) {
       console.error('Error fetching recent assignments:', error);
       return NextResponse.json(
@@ -138,11 +125,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Recent assignments:', JSON.stringify(recentAssignments, null, 2));
-
-    console.log(`Found ${recentAssignments.length} recent assignments`);
-
-      // Get monthly statistics for the last 6 months
+    // Get monthly statistics for the last 6 months
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
     interface MonthlyStats {
@@ -152,7 +135,7 @@ export async function GET(request: NextRequest) {
       completed: number;
     }
 
-    // Get detailed tickets for monthly breakdown - exclude old completed tickets and CANCELLED
+    // Get detailed tickets for monthly breakdown
     const tickets = await prisma.ticket.findMany({
       where: {
         createdAt: {
@@ -183,7 +166,6 @@ export async function GET(request: NextRequest) {
 
     // Filter out CANCELLED in-memory
     const activeTickets = tickets.filter(t => t.status !== 'CANCELLED');
-    console.log(`Found ${activeTickets.length} active tickets for the last 6 months`);
 
     // Initialize monthly stats
     const monthlyStats: MonthlyStats[] = [];
@@ -223,7 +205,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log('Monthly stats calculated:', monthlyStats);    // Format recent assignments
+    // Format recent assignments
     const formattedAssignments = recentAssignments.map(assignment => ({
       id: assignment.id,
       ticketSubject: assignment.ticket?.subject || 'No subject',
@@ -268,15 +250,6 @@ export async function GET(request: NextRequest) {
       }, [] as Array<{ category: string; _count: { category: number } }>)
     });
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
-    // Log detailed error information
-    if (error instanceof Error) {
-      console.error({
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-    }
     return NextResponse.json(
       { 
         error: 'Internal server error',
