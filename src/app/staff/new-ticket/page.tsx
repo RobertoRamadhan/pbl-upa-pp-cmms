@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface TicketForm {
@@ -9,6 +9,12 @@ interface TicketForm {
   description: string;
   location: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 export default function NewTicket() {
@@ -22,16 +28,36 @@ export default function NewTicket() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
-  const categories = [
-    'Komputer/Laptop',
-    'Printer',
-    'Jaringan',
-    'AC',
-    'Listrik',
-    'Furniture',
-    'Lainnya'
-  ];
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/ticket-categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const data = await response.json();
+        setCategories(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to hardcoded categories if API fails
+        setCategories([
+          { id: '1', name: 'Komputer/Laptop' },
+          { id: '2', name: 'Printer' },
+          { id: '3', name: 'Jaringan' },
+          { id: '4', name: 'AC' },
+          { id: '5', name: 'Listrik' },
+          { id: '6', name: 'Furniture' },
+          { id: '7', name: 'Lainnya' }
+        ]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,10 +111,13 @@ export default function NewTicket() {
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
+                disabled={loadingCategories}
               >
-                <option value="">Pilih Kategori</option>
+                <option value="">
+                  {loadingCategories ? 'Loading...' : 'Pilih Kategori'}
+                </option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
                 ))}
               </select>
             </div>

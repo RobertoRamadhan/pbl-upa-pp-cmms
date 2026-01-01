@@ -103,6 +103,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
       }
     })
 
+    console.log('Google OAuth - User lookup:', { 
+      email: userInfo.email, 
+      found: !!user, 
+      userRole: user?.role,
+      requestedRole: role,
+      dbRole: dbRole
+    })
+
+    // Jika user sudah ada, gunakan role dari database (bukan request)
+    if (user && user.role) {
+      console.log('User already exists - using database role:', user.role);
+      // Override dbRole dengan role dari database
+      // Jangan pakai role dari request jika user sudah exist
+    }
+
     // Jika user tidak ada, buat user baru dengan role sesuai request
     if (!user) {
       // Generate username dari email

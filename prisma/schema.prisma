@@ -164,9 +164,20 @@ model TechnicianProfile {
   user       SystemUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model TicketCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tickets     Ticket[]
+}
+
 model Ticket {
   id                 String               @id
   ticketNumber       String               @unique
+  categoryId         String?
   category           String
   subject            String
   description        String
@@ -188,6 +199,7 @@ model Ticket {
   completedAt        DateTime?
   assignment         Assignment?
   user               SystemUser           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  ticketCategory     TicketCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   maintenanceHistory MaintenanceHistory[]
 }
 
