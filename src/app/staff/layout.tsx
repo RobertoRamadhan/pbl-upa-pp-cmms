@@ -18,9 +18,11 @@ export default function StaffLayout({
       await fetch('/api/auth/logout', {
         method: 'POST'
       });
-      router.push('/login');
+      // Force hard redirect to prevent browser back button
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error logging out:', error);
+      window.location.href = '/login';
     }
   };
 

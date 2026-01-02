@@ -6,7 +6,7 @@ export async function POST() {
   // Hapus cookies dengan setting maxAge: 0 untuk ensure dihapus di client
   response.cookies.set('auth_token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     sameSite: 'strict',
     path: '/',
     maxAge: 0
@@ -14,7 +14,7 @@ export async function POST() {
   
   response.cookies.set('user_role', '', {
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     sameSite: 'strict',
     path: '/',
     maxAge: 0
