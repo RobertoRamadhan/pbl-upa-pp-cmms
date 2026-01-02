@@ -124,18 +124,23 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create notification for admin
+    // Create notification for admin and technicians (pengingat tiket baru masuk)
     const admins = await prisma.systemUser.findMany({
       where: { role: 'ADMIN' }
     });
 
-    // Create notifications for all admins
-    await Promise.all(admins.map((admin: { id: string }) => 
+    const technicians = await prisma.systemUser.findMany({
+      where: { role: 'TECHNICIAN' }
+    });
+
+    // Create notifications for all admins and technicians
+    const allRecipients = [...admins, ...technicians];
+    await Promise.all(allRecipients.map((user: { id: string }) => 
       prisma.notification.create({
         data: {
-          userId: admin.id,
+          userId: user.id,
           message: `New ticket created: ${subject} (${ticketNumber})`,
-          type: 'INFO'  // Changed to use valid NotificationType
+          type: 'INFO'
         }
       })
     ));
