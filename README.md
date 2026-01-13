@@ -42,7 +42,7 @@ Aplikasi ini dibangun dengan teknologi terkini menggunakan **Next.js 15**, **Rea
 
 ## 👥 Tim Pengembang
 
-### Tim 3A-6 Semester 4 - Universitas Pendidikan dan Pelatihan
+### Tim 3A-6 Semester 3 - Universitas Pendidikan dan Pelatihan
 
 | No | NIM | Nama | Peran |
 |:--:|:---:|------|-------|
@@ -52,7 +52,7 @@ Aplikasi ini dibangun dengan teknologi terkini menggunakan **Next.js 15**, **Rea
 | 4 | 3312411056 | **Riska Safitri** | Anggota |
 
 **Kelas**: 3A-6  
-**Semester**: 3
+**Semester**: 3   
 **Tahun Akademik**: 2024/2025
 
 ---
@@ -193,6 +193,24 @@ bun dev
 ```
 
 Akses aplikasi di: [http://localhost:3000](http://localhost:3000)
+
+### Default Credentials (Setelah Seed Database)
+
+Setelah menjalankan `npm run prisma:seed`, gunakan credentials berikut untuk login:
+
+#### Admin Account
+```
+Username: admin
+Password: Admin@CMMS2024Secure!
+Role: Admin
+```
+
+#### Supervisor Account
+```
+Username: supervisor
+Password: supervisor123
+Role: Supervisor
+```
 
 ### Build untuk Production
 ```bash
