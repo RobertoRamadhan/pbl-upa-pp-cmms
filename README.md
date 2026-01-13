@@ -52,7 +52,7 @@ Aplikasi ini dibangun dengan teknologi terkini menggunakan **Next.js 15**, **Rea
 | 4 | 3312411056 | **Riska Safitri** | Anggota |
 
 **Kelas**: 3A-6  
-**Semester**: 4  
+**Semester**: 3
 **Tahun Akademik**: 2024/2025
 
 ---
@@ -387,8 +387,8 @@ Untuk berkontribusi pada proyek ini:
 Untuk pertanyaan atau saran, silakan hubungi tim pengembang:
 
 - **Ketua Tim**: Roberto November Ramadhan
-- **Email**: roberto.november@student.edu (ganti dengan email yang sesuai)
-- **GitHub**: [Team Repository](https://github.com)
+- **Email**: robertonovember.r@gmail.com
+- **GitHub**: https://github.com/RobertoRamadhan/pbl-upa-pp-cmms.git
 
 ---
 
