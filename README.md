@@ -405,7 +405,7 @@ Proyek ini dikembangkan sebagai bagian dari Program Beasiswa Latihan (PBL) di Un
 - **Program**: Project Based Learning (PBL)
 - **Institusi**: Universitas Pendidikan dan Pelatihan
 - **Kelas**: 3A-6
-- **Semester**: 4
+- **Semester**: 3
 - **Tahun Akademik**: 2024/2025
 
 ---
