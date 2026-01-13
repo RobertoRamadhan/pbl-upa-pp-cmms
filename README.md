@@ -42,7 +42,7 @@ Aplikasi ini dibangun dengan teknologi terkini menggunakan **Next.js 15**, **Rea
 
 ## 👥 Tim Pengembang
 
-### Tim 3A-6 Semester 3 - Universitas Pendidikan dan Pelatihan
+### Tim 3A-6 Semester 3 - Universitas politeknik negeri batam
 
 | No | NIM | Nama | Peran |
 |:--:|:---:|------|-------|
